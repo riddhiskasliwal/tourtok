@@ -373,15 +373,17 @@
 
     .guest-list-form{margin-top:8px;}
 
+    /* UPDATED: now 4 columns: name | type | age | remove */
     .guest-row{
       display:grid;
-      grid-template-columns:1fr 100px 36px;
+      grid-template-columns:1fr 100px 80px 36px;
       gap:8px;
       align-items:end;
       margin-top:8px;
     }
 
-    .guest-row input{
+    .guest-row input,
+    .guest-row select{
       height:38px;
       border:1px solid rgba(31,35,48,0.3);
       border-radius:var(--radius-sm);
@@ -451,7 +453,7 @@
         min-width:600px;
       }
       .guest-row{
-        grid-template-columns:1fr 100px 36px;
+        grid-template-columns:1fr 100px 80px 36px;
       }
     }
   </style>
@@ -574,7 +576,7 @@
       </label>
 
       <!-- Dynamic Guest List -->
-      <label style="margin-top:16px">Guest List (Name + Age)</label>
+      <label style="margin-top:16px">Guest List (Name / Type / Age)</label>
       <div class="guest-controls">
         <button type="button" class="btn btn-primary" id="addGuestBtn">+ Add Guest</button>
         <span class="limit-note" id="guestLimitNote">0 / 20</span>
@@ -587,7 +589,7 @@
       <button class="generate-btn" id="generatePdf" type="button">Generate PDF</button>
 
       <div class="hint">
-        Preview updates live. GST is fixed to 12345. Authorized by is fixed to “Mr Kishor Agrawal”, Designation “Tour Agent”.
+        Preview updates live. GST is fixed to 08ABHPA4270A1ZA. Authorized by is fixed to “Mr Kishor Agrawal”, Designation “Tour Agent”.
       </div>
     </div>
 
@@ -602,7 +604,7 @@
           <div class="voucher-left">
             <div class="voucher-logo">
               <!-- serve from same origin over http(s) to avoid taint -->
-              <img src="LogoD.jpg" alt="TourTok Logo">
+              <img src="LogoD.jpg" alt="TourTok Logo" crossorigin="anonymous">
             </div>
             <div class="voucher-brand">
               <h1>TourTok</h1>
@@ -683,11 +685,16 @@
             <thead>
               <tr>
                 <th>Guest Name</th>
+                <th>Type</th>
                 <th>Age</th>
               </tr>
             </thead>
             <tbody id="guestTableBody">
-              <tr><td style="height:18px;"></td><td></td></tr>
+              <tr>
+                <td style="height:18px;"></td>
+                <td></td>
+                <td></td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -743,7 +750,6 @@
     function setText(id, text) {
       const el = document.getElementById(id);
       if (el) {
-        // .textContent works fine for <td> if element exists; this guard prevents null errors
         el.textContent = text || "";
       }
     }
@@ -775,6 +781,10 @@
       row.className='guest-row';
       row.innerHTML=`
         <input type="text" class="guest-name" placeholder="Guest Name" value="${nameVal}">
+        <select class="guest-type">
+          <option value="Adult">Adult</option>
+          <option value="Child">Child</option>
+        </select>
         <input type="number" class="guest-age" placeholder="Age" min="0" value="${ageVal}">
         <button type="button" class="guest-remove" title="Remove">✕</button>
       `;
@@ -787,8 +797,9 @@
       const rows=[...guestListForm.querySelectorAll('.guest-row')];
       return rows.map(r=>({
         name:r.querySelector('.guest-name')?.value?.trim()||"",
+        type:r.querySelector('.guest-type')?.value||"",
         age:r.querySelector('.guest-age')?.value?.trim()||""
-      })).filter(g=>g.name||g.age);
+      })).filter(g=>g.name||g.age||g.type);
     }
 
     function escapeHtml(str){
@@ -800,11 +811,16 @@
     function buildGuestTableRows(){
       const guests=getGuests();
       if(guests.length===0){
-        return `<tr><td style="height:18px;"></td><td></td></tr>`;
+        return `<tr>
+          <td style="height:18px;"></td>
+          <td></td>
+          <td></td>
+        </tr>`;
       }
       return guests.map(g=>`
         <tr>
           <td>${escapeHtml(g.name)}</td>
+          <td>${escapeHtml(g.type)}</td>
           <td>${escapeHtml(g.age)}</td>
         </tr>
       `).join('');
@@ -836,8 +852,6 @@
       setText('previewCheckin', val('checkin'));
       setText('previewCheckout', val('checkout'));
       setText('previewAuthDate', val('authDate'));
-
-      // this is the one that was giving you trouble:
       setText('previewHotelAddress', val('hotelAddress'));
 
       // days / rooms repeat
@@ -857,8 +871,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      // wire events AFTER DOM is ready
-
+      // live previews any time form changes
       document.addEventListener('input', e=>{
         if(e.target.closest('.form-section')){
           updatePreviewFields();
@@ -900,7 +913,7 @@
         pdf.save(fileName);
       });
 
-      // init once DOM is stable
+      // init
       updateGuestLimitNote();
       updatePreviewFields();
     });
