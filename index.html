@@ -131,6 +131,7 @@
       font-size:11px;
       line-height:1.4;
       color:var(--navy);
+      min-width:180px;
     }
     .voucher-right div{margin-bottom:4px;}
 
@@ -373,7 +374,7 @@
 
     .guest-list-form{margin-top:8px;}
 
-    /* UPDATED: now 4 columns: name | type | age | remove */
+    /* 4 columns: name | type | age | remove */
     .guest-row{
       display:grid;
       grid-template-columns:1fr 100px 80px 36px;
@@ -546,19 +547,15 @@
       <div class="row-inline">
         <div>
           <label>Booking Ref No.
-            <input id="bookingRef" type="text"/>
+            <input id="bookingRef" type="text" placeholder="Internal / OTA ref"/>
           </label>
         </div>
         <div>
-          <label>Voucher No.
-            <input id="voucherNo" type="text"/>
+          <label>Inclusions / Special Requests
+            <textarea id="inclusions" rows="3" placeholder="Breakfast, airport pickup, early check-in..."></textarea>
           </label>
         </div>
       </div>
-
-      <label>Inclusions
-        <textarea id="inclusions" rows="3" placeholder="List all inclusions (e.g. breakfast, airport pickup, taxes...)"></textarea>
-      </label>
 
       <label>Payment Details</label>
       <div class="payment-row" id="paymentRadios">
@@ -567,8 +564,8 @@
         <label><input type="radio" name="payment" value="Partial"> Partial</label>
       </div>
 
-      <label>Remarks / Special Requests
-        <textarea id="remarks" rows="2" placeholder="Early check-in, special arrangements, etc."></textarea>
+      <label>Payment Remarks
+        <textarea id="remarks" rows="2" placeholder="e.g. Guest to pay city tax on arrival"></textarea>
       </label>
 
       <label>Date
@@ -589,7 +586,7 @@
       <button class="generate-btn" id="generatePdf" type="button">Generate PDF</button>
 
       <div class="hint">
-        Preview updates live. GST is fixed to 08ABHPA4270A1ZA. Authorized by is fixed to “Mr Kishor Agrawal”, Designation “GM”.
+        Preview updates live. GST is fixed to 08ABHPA4270A1ZA. Authorized by is fixed to “Mr Kishor Agrawal”, Designation “GM”. Voucher No. is auto-generated.
       </div>
     </div>
 
@@ -619,6 +616,7 @@
           <div class="voucher-right">
             <div><b>GST No.</b>: <strong>08ABHPA4270A1ZA</strong></div>
             <div><b>Voucher No.</b>: <strong id="previewVoucherNo"></strong></div>
+            <div><b>Booking Ref.</b>: <span id="previewBookingRefHeader"></span></div>
           </div>
         </div>
 
@@ -826,6 +824,22 @@
       `).join('');
     }
 
+    // auto voucher no generator
+    function generateVoucherNo(){
+      const d = new Date();
+      const yyyy = d.getFullYear().toString();
+      // months are 0-based, pad to 2 digits
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      const HH = String(d.getHours()).padStart(2,'0');
+      const MM = String(d.getMinutes()).padStart(2,'0');
+      const ss = String(d.getSeconds()).padStart(2,'0');
+      return `TT-${yyyy}${mm}${dd}${HH}${MM}${ss}`;
+    }
+
+    // We'll hold the generated voucher no. in memory once created
+    let cachedVoucherNo = "";
+
     function updatePreviewFields(){
       // Lead / Group
       setText('previewGuestName', val('guestName'));
@@ -845,8 +859,11 @@
       setText('previewMealPlan', val('mealPlan'));
       setText('previewRoomCategory', val('roomCategory'));
       setText('previewRoomType', val('roomType'));
-      setText('previewBookingRef', val('bookingRef'));
-      setText('previewVoucherNo', val('voucherNo'));
+
+      // booking ref shows in header now
+      setText('previewBookingRefHeader', val('bookingRef'));
+
+      // these extra details
       setText('previewInclusions', val('inclusions'));
       setText('previewRemarks', val('remarks'));
       setText('previewCheckin', val('checkin'));
@@ -862,6 +879,9 @@
       // payment
       const paymentSel=document.querySelector('input[name="payment"]:checked');
       setText('previewPayment', paymentSel ? paymentSel.value : "");
+
+      // voucher number (if we've already generated one this session)
+      setText('previewVoucherNo', cachedVoucherNo);
 
       // guest table
       const bodyEl=document.getElementById('guestTableBody');
@@ -894,7 +914,15 @@
 
       // PDF
       document.getElementById('generatePdf').addEventListener('click', async ()=>{
+        // if voucher number not generated yet (or you want a new one every click,
+        // remove the if and always regenerate)
+        if(!cachedVoucherNo){
+          cachedVoucherNo = generateVoucherNo();
+        }
+        setText('previewVoucherNo', cachedVoucherNo);
+
         updatePreviewFields();
+
         const voucher=document.getElementById('voucher');
         const canvas=await html2canvas(voucher,{
           scale:2,
