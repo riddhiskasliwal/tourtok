@@ -1,464 +1,617 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TourTok Voucher Generator</title>
 
-  <!-- jsPDF and html2canvas from CDN -->
+  <!-- jsPDF & html2canvas -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
-    :root {
-      --brand-bg: #e6f0ff;
-      --brand-primary: #003399;
-      --text-dark: #000;
-      --panel-bg: #fff;
-      --radius-lg: 12px;
-      --radius-sm: 6px;
-      --border-light: #d5d9e8;
-      --border-mid: #999;
+    :root{
+      /* palette pulled from logo */
+      --navy:#1f2330;            /* dark text/border (logo background tone) */
+      --teal-soft:#e9fdff;       /* very light teal fill */
+      --teal-accent:#12cdd6;     /* saturated teal accent from logo */
+      --magenta-soft:#ffe8f5;    /* pale magenta chip */
+      --bg-page:#f5f7fa;         /* page background (not dark) */
+      --panel-bg:#ffffff;
+
+      --radius-lg:12px;
+      --radius-sm:8px;
+
+      --border-line:#1f2330;     /* use navy for table borders to feel branded */
     }
 
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      margin: 0;
-      background-color: var(--brand-bg);
-      color: var(--text-dark);
-      padding: 20px;
+    *{box-sizing:border-box;}
+
+    body{
+      font-family:Arial,Helvetica,sans-serif;
+      margin:0;
+      background:var(--bg-page);
+      color:var(--navy);
+      padding:20px;
     }
 
-    .container {
-      display: flex;
-      gap: 20px;
-      justify-content: center;
-      align-items: flex-start;
-      flex-wrap: wrap;
+    .container{
+      display:flex;
+      gap:20px;
+      justify-content:center;
+      align-items:flex-start;
+      flex-wrap:wrap;
     }
 
-    .form-section {
-      flex: 0 1 360px;
-      background: var(--panel-bg);
-      padding: 24px;
-      border-radius: var(--radius-lg);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-      max-height: 90vh;
-      overflow-y: auto;
+    .form-section{
+      flex:0 1 420px;
+      background:var(--panel-bg);
+      padding:24px;
+      border-radius:var(--radius-lg);
+      box-shadow:0 4px 15px rgba(0,0,0,.08);
+      max-height:90vh;
+      overflow:auto;
+      border:1px solid rgba(31,35,48,0.08);
     }
 
-    .voucher-preview-wrapper {
-      flex: 1 1 700px;
-      background: var(--brand-bg);
-      padding: 24px;
-      border-radius: var(--radius-lg);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-      color: var(--text-dark);
-      overflow-x: auto;
+    .voucher-preview-wrapper{
+      flex:1 1 700px;
+      background:var(--bg-page);
+      padding:24px;
+      border-radius:var(--radius-lg);
+      box-shadow:0 4px 15px rgba(0,0,0,.08);
+      overflow-x:auto;
+      border:1px solid rgba(31,35,48,0.08);
     }
 
-    /* Voucher card itself (screen preview size ~A4 width) */
-    #voucher {
-      width: 794px; /* ~A4 @96dpi */
-      background: #fff;
-      border-radius: var(--radius-lg);
-      color: var(--text-dark);
-      border: 1px solid var(--border-light);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-      padding: 24px 24px 32px;
-      box-sizing: border-box;
-      font-size: 13px;
-      line-height: 1.4;
+    /* Voucher card (preview / PDF capture target) */
+    #voucher{
+      width:794px; /* ~A4 @96dpi */
+      background:#fff;
+      border-radius:var(--radius-lg);
+      border:1px solid rgba(31,35,48,0.15);
+      box-shadow:0 2px 8px rgba(0,0,0,.04);
+      padding:24px 24px 32px;
+      font-size:13px;
+      line-height:1.4;
+      color:var(--navy);
     }
 
-    /* Header area in voucher */
-    .voucher-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      row-gap: 12px;
+    /* Top bar with light teal accent */
+    .voucher-top-bar{
+      background:var(--teal-soft);
+      color:var(--navy);
+      font-weight:700;
+      text-align:center;
+      border:1px solid var(--border-line);
+      border-bottom:none;
+      padding:6px 8px;
+      font-size:14px;
     }
 
-    .voucher-header-left {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
+    .voucher-header{
+      border:1px solid var(--border-line);
+      border-top:none;
+      padding:12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      flex-wrap:wrap;
+      row-gap:12px;
     }
 
-    .voucher-logo img {
-      width: 80px;
-      height: auto;
-      border-radius: 8px;
-      border: 1px solid var(--border-light);
-      object-fit: contain;
-      background: #fff;
+    .voucher-left{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
     }
 
-    .voucher-brand h1 {
-      margin: 0;
-      font-size: 20px;
-      line-height: 1.2;
-      color: var(--brand-primary);
-      font-weight: 700;
+    .voucher-logo img{
+      width:70px;
+      height:auto;
+      border-radius:6px;
+      border:1px solid rgba(31,35,48,0.15);
+      object-fit:contain;
+      background:#fff;
     }
 
-    .voucher-brand .meta-line {
-      font-size: 12px;
-      margin-top: 4px;
-      font-weight: 600;
-      color: #000;
+    .voucher-brand h1{
+      margin:0;
+      font-size:20px;
+      color:var(--navy);
+      font-weight:700;
+      line-height:1.2;
     }
 
-    .voucher-brand .contact-line {
-      font-size: 11px;
-      margin-top: 4px;
-      color: #333;
-      line-height: 1.4;
+    .voucher-brand .contact-line{
+      font-size:11px;
+      margin-top:8px;
+      line-height:1.4;
+      color:var(--navy);
     }
 
-    .voucher-header-right {
-      text-align: right;
-      font-size: 11px;
-      line-height: 1.4;
-      color: #000;
+    .voucher-right{
+      text-align:right;
+      font-size:11px;
+      line-height:1.4;
+      color:var(--navy);
+    }
+    .voucher-right div{margin-bottom:4px;}
+
+    /* Info table under header */
+    .info-grid{
+      border:1px solid var(--border-line);
+      border-top:none;
+      border-collapse:collapse;
+      width:100%;
+      font-size:12px;
+      color:var(--navy);
     }
 
-    .voucher-header-right div {
-      margin-bottom: 4px;
+    .info-grid td,
+    .info-grid th{
+      border:1px solid var(--border-line);
+      padding:4px 6px;
+      vertical-align:top;
+      background:#fff;
     }
 
-    .section-divider {
-      border: 0;
-      border-top: 1px solid var(--border-light);
-      margin: 16px 0;
+    .info-grid .label-cell{
+      font-weight:700;
+      width:120px;
+      background:var(--teal-soft);
+      color:var(--navy);
     }
 
-    /* Two-column blocks inside voucher */
-    .two-col {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
+    .stay-row{
+      text-align:center;
+      font-size:12px;
     }
 
-    .two-col > .col {
-      flex: 1 1 280px;
-      min-width: 0;
+    .stay-row th{
+      background:var(--teal-soft);
+      font-weight:700;
+      color:var(--navy);
     }
 
-    .field-line {
-      margin-bottom: 8px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      font-size: 13px;
-    }
-    .field-label {
-      font-weight: bold;
-      color: #000;
-    }
-    .field-value {
-      color: #000;
-      word-break: break-word;
+    /* Section headers */
+    .section-header{
+      background:var(--teal-soft);
+      color:var(--navy);
+      border:1px solid var(--border-line);
+      border-top-width:2px;
+      border-bottom:none;
+      margin-top:16px;
+      font-weight:700;
+      text-align:center;
+      font-size:13px;
+      padding:6px 8px;
     }
 
-    .small-value {
-      font-size: 12px;
-      color: #444;
-      word-break: break-word;
-      white-space: pre-line;
+    /* Guest table */
+    .guest-table-wrapper{
+      border:1px solid var(--border-line);
+      border-top:none;
+      overflow:hidden;
+      background:#fff;
     }
 
-    /* Footer / signature block */
-    .footer-block {
-      margin-top: 20px;
-      font-size: 12px;
-    }
-    .footer-flex {
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      row-gap: 16px;
-    }
-    .auth-block > div {
-      margin-bottom: 6px;
+    table.guest-table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:12px;
+      color:var(--navy);
     }
 
-    .seal-box {
-      text-align: center;
+    .guest-table th,
+    .guest-table td{
+      border:1px solid var(--border-line);
+      padding:4px 6px;
+      text-align:left;
+      background:#fff;
     }
-    .seal-placeholder {
-      height: 60px;
-      width: 200px;
-      border: 1px dashed var(--border-mid);
-      border-radius: var(--radius-sm);
-      font-size: 11px;
-      color: #555;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+
+    .guest-table th{
+      background:var(--teal-soft);
+      font-weight:700;
+      color:var(--navy);
+    }
+
+    /* Details block */
+    .details-block{
+      border:1px solid var(--border-line);
+      border-top:none;
+      padding:10px;
+      background:#fff;
+      font-size:12px;
+      line-height:1.5;
+      color:var(--navy);
+    }
+
+    .details-line{margin-bottom:8px;}
+    .details-label{font-weight:700;}
+
+    /* Footer/auth */
+    .footer-block{
+      border:1px solid var(--border-line);
+      border-top:none;
+      padding:10px;
+      background:#fff;
+      font-size:12px;
+      line-height:1.5;
+      margin-bottom:12px;
+      color:var(--navy);
+    }
+
+    .footer-flex{
+      display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      row-gap:12px;
+    }
+
+    .auth-block > div{margin-bottom:6px;}
+
+    .seal-box{text-align:center;}
+
+    .seal-placeholder{
+      height:60px;
+      width:200px;
+      border:1px dashed rgba(31,35,48,0.4);
+      border-radius:var(--radius-sm);
+      font-size:11px;
+      color:#555;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#fff;
+    }
+
+    .thankyou-bar{
+      border:1px solid var(--border-line);
+      border-top:none;
+      text-align:center;
+      font-size:12px;
+      padding:8px;
+      font-weight:700;
+      background:#fff;
+      color:var(--navy);
     }
 
     /* Form styles */
-    h2.form-title {
-      color: var(--brand-primary);
-      margin-top: 0;
-      font-size: 20px;
-      line-height: 1.2;
-      border-bottom: 2px solid var(--brand-primary);
-      padding-bottom: 6px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+    h2.form-title{
+      color:var(--navy);
+      margin-top:0;
+      font-size:20px;
+      border-bottom:3px solid var(--teal-accent);
+      padding-bottom:6px;
+      font-weight:700;
+      letter-spacing:-.02em;
     }
 
-    label {
-      display: block;
-      margin-top: 12px;
-      font-weight: bold;
-      font-size: 13px;
-      color: #000;
+    label{
+      display:block;
+      margin-top:12px;
+      font-weight:700;
+      font-size:13px;
+      color:var(--navy);
     }
 
     input[type=text],
     input[type=number],
     input[type=date],
     textarea,
-    select {
-      width: 100%;
-      padding: 10px;
-      margin-top: 6px;
-      border: 1px solid #ccc;
-      border-radius: var(--radius-sm);
-      font-size: 14px;
-      font-family: inherit;
-      box-sizing: border-box;
+    select{
+      width:100%;
+      padding:10px;
+      margin-top:6px;
+      border:1px solid rgba(31,35,48,0.3);
+      border-radius:var(--radius-sm);
+      font-size:14px;
+      background:#fff;
+      color:var(--navy);
     }
 
-    .row-inline {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
+    .row-inline{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
     }
-    .row-inline > div {
-      flex: 1 1 140px;
-      min-width: 0;
-    }
-
-    .payment-row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 8px;
-      font-weight: normal;
-      font-size: 13px;
-      color: #000;
-    }
-    .payment-row label {
-      margin-top: 0;
-      font-weight: normal;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-    }
-    .payment-row input[type=radio] {
-      margin: 0;
+    .row-inline > div{
+      flex:1 1 140px;
+      min-width:0;
     }
 
-    button.generate-btn {
-      margin-top: 20px;
-      background-color: var(--brand-primary);
-      color: white;
-      padding: 12px 18px;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      width: 100%;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    .payment-row{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:8px;
+      font-weight:400;
+      font-size:13px;
+      color:var(--navy);
     }
-    button.generate-btn:hover {
-      background-color: #002080;
-    }
-
-    .hint {
-      margin-top: 12px;
-      font-size: 12px;
-      color: #444;
-      line-height: 1.4;
+    .payment-row label{
+      margin-top:0;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-weight:400;
     }
 
-    @media (max-width: 900px) {
-      .voucher-preview-wrapper {
-        flex-basis: 100%;
-        order: 3;
+    .chip{
+      display:inline-block;
+      background:var(--magenta-soft);
+      border:1px solid rgba(31,35,48,0.15);
+      padding:3px 8px;
+      border-radius:9999px;
+      font-size:12px;
+      color:var(--navy);
+      font-weight:600;
+    }
+
+    /* Guest dynamic inputs */
+    .guest-controls{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      margin-top:6px;
+    }
+
+    .btn{
+      border:0;
+      border-radius:var(--radius-sm);
+      padding:9px 12px;
+      font-weight:600;
+      cursor:pointer;
+      font-size:13px;
+      line-height:1.2;
+    }
+
+    .btn-primary{
+      background:var(--teal-accent);
+      color:#fff;
+      border:1px solid var(--teal-accent);
+    }
+    .btn-primary:hover{
+      filter:brightness(0.9);
+    }
+
+    .guest-list-form{margin-top:8px;}
+
+    .guest-row{
+      display:grid;
+      grid-template-columns:1fr 100px 36px;
+      gap:8px;
+      align-items:end;
+      margin-top:8px;
+    }
+
+    .guest-row input{
+      height:38px;
+      border:1px solid rgba(31,35,48,0.3);
+      border-radius:var(--radius-sm);
+      padding:8px;
+      font-size:13px;
+      color:var(--navy);
+    }
+
+    .guest-remove{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:38px;
+      border-radius:var(--radius-sm);
+      border:1px solid rgba(31,35,48,0.2);
+      background:var(--teal-soft);
+      color:var(--navy);
+      cursor:pointer;
+      font-weight:600;
+    }
+    .guest-remove:hover{
+      background:#d2f9ff;
+    }
+
+    .limit-note{
+      font-size:12px;
+      color:var(--navy);
+      padding-top:4px;
+      font-weight:500;
+    }
+
+    button.generate-btn{
+      margin-top:20px;
+      background:var(--teal-accent);
+      color:#fff;
+      padding:12px 18px;
+      border:none;
+      border-radius:var(--radius-sm);
+      font-size:15px;
+      font-weight:600;
+      cursor:pointer;
+      width:100%;
+      box-shadow:0 2px 6px rgba(0,0,0,.1);
+    }
+    button.generate-btn:hover{
+      filter:brightness(0.9);
+    }
+
+    .hint{
+      margin-top:12px;
+      font-size:12px;
+      color:var(--navy);
+      line-height:1.4;
+      background:var(--teal-soft);
+      border:1px solid rgba(31,35,48,0.15);
+      border-radius:var(--radius-sm);
+      padding:8px 10px;
+    }
+
+    @media (max-width:900px){
+      .voucher-preview-wrapper{
+        flex-basis:100%;
+        order:3;
       }
-      #voucher {
-        width: 100%;
-        min-width: 600px;
+      #voucher{
+        width:100%;
+        min-width:600px;
+      }
+      .guest-row{
+        grid-template-columns:1fr 100px 36px;
       }
     }
   </style>
 </head>
 <body>
-
   <div class="container">
 
     <!-- LEFT: FORM -->
     <div class="form-section">
       <h2 class="form-title">Fill Voucher Details</h2>
 
-      <div>
-        <label>Guest Name
-          <input id="guestName" type="text" placeholder="Guest Name"/>
-        </label>
+      <label>Lead Guest
+        <input id="guestName" type="text" placeholder="Lead Guest Name"/>
+      </label>
 
-        <label>Group Name
-          <input id="groupName" type="text" placeholder="Group / Company"/>
-        </label>
+      <label>Group / Company
+        <input id="groupName" type="text" placeholder="Group / Company"/>
+      </label>
 
-        <div class="row-inline">
-          <div>
-            <label>No. of Guests
-              <input id="numGuests" type="number" min="1"/>
-            </label>
-          </div>
-          <div>
-            <label>No. of Rooms
-              <input id="numRooms" type="number" min="1"/>
-            </label>
-          </div>
+      <div class="row-inline">
+        <div>
+          <label>No. of Guests <span class="chip">auto if empty</span>
+            <input id="numGuests" type="number" min="0" placeholder="Leave blank to auto-count"/>
+          </label>
         </div>
-
-        <div class="row-inline">
-          <div>
-            <label>Check-in Date
-              <input id="checkin" type="date"/>
-            </label>
-          </div>
-          <div>
-            <label>Check-out Date
-              <input id="checkout" type="date"/>
-            </label>
-          </div>
+        <div>
+          <label>No. of Rooms
+            <input id="numRooms" type="number" min="1"/>
+          </label>
         </div>
+      </div>
 
-        <label>Hotel Name
-          <input id="hotelName" type="text" placeholder="Hotel / Resort"/>
-        </label>
-
-        <label>Hotel Address
-          <textarea id="hotelAddress" rows="2" placeholder="Full address"></textarea>
-        </label>
-
-        <div class="row-inline">
-          <div>
-            <label>Contact Person
-              <input id="contactPerson" type="text" placeholder="Manager / Front Desk"/>
-            </label>
-          </div>
-          <div>
-            <label>Hotel Phone
-              <input id="hotelPhone" type="text" placeholder="+91 ..."/>
-            </label>
-          </div>
+      <div class="row-inline">
+        <div>
+          <label>Check-in Date
+            <input id="checkin" type="date"/>
+          </label>
         </div>
-
-        <div class="row-inline">
-          <div>
-            <label>Room Category
-              <input id="roomCategory" type="text" placeholder="Deluxe / Suite / etc."/>
-            </label>
-          </div>
-          <div>
-            <label>Room Type
-              <input id="roomType" type="text" placeholder="Twin / Double / etc."/>
-            </label>
-          </div>
+        <div>
+          <label>Check-out Date
+            <input id="checkout" type="date"/>
+          </label>
         </div>
+      </div>
 
-        <label>Meal Plan
-          <select id="mealPlan">
-            <option value="">Select</option>
-            <option value="EP">EP</option>
-            <option value="CP">CP</option>
-            <option value="MAP">MAP</option>
-            <option value="AP">AP</option>
-          </select>
-        </label>
+      <label>Hotel Name
+        <input id="hotelName" type="text" placeholder="Hotel / Resort"/>
+      </label>
 
-        <div class="row-inline">
-          <div>
-            <label>Booking Ref No.
-              <input id="bookingRef" type="text"/>
-            </label>
-          </div>
-          <div>
-            <label>Voucher No.
-              <input id="voucherNo" type="text"/>
-            </label>
-          </div>
+      <label>Hotel Address
+        <textarea id="hotelAddress" rows="2" placeholder="Full address"></textarea>
+      </label>
+
+      <div class="row-inline">
+        <div>
+          <label>Contact Person
+            <input id="contactPerson" type="text" placeholder="Manager / Front Desk"/>
+          </label>
         </div>
-
-        <label>Inclusions
-          <textarea id="inclusions" rows="3" placeholder="List all inclusions (e.g. breakfast, airport pickup, taxes...)"></textarea>
-        </label>
-
-        <label>Payment Details</label>
-        <div class="payment-row" id="paymentRadios">
-          <label><input type="radio" name="payment" value="Prepaid" checked> Prepaid</label>
-          <label><input type="radio" name="payment" value="Guest Pay"> Guest Pay</label>
-          <label><input type="radio" name="payment" value="Partial"> Partial</label>
+        <div>
+          <label>Hotel Phone
+            <input id="hotelPhone" type="text" placeholder="+91 ..."/>
+          </label>
         </div>
+      </div>
 
-        <label>Remarks / Special Requests
-          <textarea id="remarks" rows="2" placeholder="Early check-in, special arrangements, etc."></textarea>
-        </label>
-
-        <label>GST No.
-          <input id="gst" type="text" placeholder="GST Number"/>
-        </label>
-
-        <div class="row-inline">
-          <div>
-            <label>Authorized by
-              <input id="authorizedBy" type="text" placeholder="Your Name"/>
-            </label>
-          </div>
-          <div>
-            <label>Designation
-              <input id="designation" type="text" placeholder="Your Title"/>
-            </label>
-          </div>
+      <div class="row-inline">
+        <div>
+          <label>Room Category
+            <input id="roomCategory" type="text" placeholder="Deluxe / Suite / etc."/>
+          </label>
         </div>
-
-        <label>Date
-          <input id="authDate" type="date"/>
-        </label>
-
-        <button class="generate-btn" id="generatePdf" type="button">Generate PDF</button>
-
-        <div class="hint">
-          The preview updates live as you type. When you're happy, click "Generate PDF" to download an A4 voucher.
+        <div>
+          <label>Room Type
+            <input id="roomType" type="text" placeholder="Twin / Double / etc."/>
+          </label>
         </div>
+      </div>
+
+      <label>Meal Plan
+        <select id="mealPlan">
+          <option value="">Select</option>
+          <option value="EP">EP</option>
+          <option value="CP">CP</option>
+          <option value="MAP">MAP</option>
+          <option value="AP">AP</option>
+        </select>
+      </label>
+
+      <div class="row-inline">
+        <div>
+          <label>Booking Ref No.
+            <input id="bookingRef" type="text"/>
+          </label>
+        </div>
+        <div>
+          <label>Voucher No.
+            <input id="voucherNo" type="text"/>
+          </label>
+        </div>
+      </div>
+
+      <label>Inclusions
+        <textarea id="inclusions" rows="3" placeholder="List all inclusions (e.g. breakfast, airport pickup, taxes...)"></textarea>
+      </label>
+
+      <label>Payment Details</label>
+      <div class="payment-row" id="paymentRadios">
+        <label><input type="radio" name="payment" value="Prepaid" checked> Prepaid</label>
+        <label><input type="radio" name="payment" value="Guest Pay"> Guest Pay</label>
+        <label><input type="radio" name="payment" value="Partial"> Partial</label>
+      </div>
+
+      <label>Remarks / Special Requests
+        <textarea id="remarks" rows="2" placeholder="Early check-in, special arrangements, etc."></textarea>
+      </label>
+
+      <label>Date
+        <input id="authDate" type="date"/>
+      </label>
+
+      <!-- Dynamic Guest List -->
+      <label style="margin-top:16px">Guest List (Name + Age)</label>
+      <div class="guest-controls">
+        <button type="button" class="btn btn-primary" id="addGuestBtn">+ Add Guest</button>
+        <span class="limit-note" id="guestLimitNote">0 / 20</span>
+      </div>
+
+      <div id="guestListForm" class="guest-list-form">
+        <!-- guest rows will be injected here -->
+      </div>
+
+      <button class="generate-btn" id="generatePdf" type="button">Generate PDF</button>
+
+      <div class="hint">
+        Preview updates live. GST is fixed to 12345. Authorized by is fixed to “Mr Kishor Agrawal”, Designation “Tour Agent”.
       </div>
     </div>
 
-    <!-- RIGHT: VOUCHER PREVIEW -->
+    <!-- RIGHT: VOUCHER PREVIEW / PDF CONTENT -->
     <div class="voucher-preview-wrapper">
       <div id="voucher">
 
-        <!-- Header / Logo / Contact -->
+        <!-- top bar / header -->
+        <div class="voucher-top-bar">HOTEL BOOKING VOUCHER</div>
+
         <div class="voucher-header">
-          <div class="voucher-header-left">
+          <div class="voucher-left">
             <div class="voucher-logo">
-              <!-- Your logo image file needs to be in the same folder, named LogoD.jpg -->
+              <!-- Put your actual logo file at same level as this HTML and name it LogoD.jpg -->
               <img src="LogoD.jpg" alt="TourTok Logo">
             </div>
             <div class="voucher-brand">
               <h1>TourTok</h1>
-              <div class="meta-line">HOTEL BOOKING VOUCHER</div>
               <div class="contact-line">
                 Phone: +91 9829013066<br>
                 Email: tour2tok@gmail.com<br>
@@ -467,117 +620,111 @@
             </div>
           </div>
 
-          <div class="voucher-header-right">
-            <div>GST No.: <span id="previewGst">___________________________</span></div>
+          <div class="voucher-right">
+            <div>GST No.: <strong>12345</strong></div>
             <div>Voucher No.: <strong id="previewVoucherNo"></strong></div>
           </div>
         </div>
 
-        <hr class="section-divider"/>
+        <!-- Info Grid -->
+        <table class="info-grid">
+          <tr>
+            <td class="label-cell">Lead Guest:</td>
+            <td id="previewGuestName"></td>
+            <td class="label-cell">Group / Company:</td>
+            <td id="previewGroupName"></td>
+          </tr>
 
-        <!-- Guest / Stay details in two columns -->
-        <div class="two-col">
-          <div class="col">
-            <div class="field-line">
-              <span class="field-label">Guest Name:</span>
-              <span class="field-value" id="previewGuestName"></span>
-            </div>
-            <div class="field-line">
-              <span class="field-label">Group Name:</span>
-              <span class="field-value" id="previewGroupName"></span>
-            </div>
-            <div class="field-line">
-              <span class="field-label">No. of Guests:</span>
-              <span class="field-value" id="previewNumGuests"></span>
-            </div>
-            <div class="field-line">
-              <span class="field-label">No. of Rooms:</span>
-              <span class="field-value" id="previewNumRooms"></span>
-            </div>
+          <tr>
+            <td class="label-cell">No. of Guests:</td>
+            <td id="previewNumGuests"></td>
+            <td class="label-cell">No. of Rooms:</td>
+            <td id="previewNumRooms"></td>
+          </tr>
+
+          <!-- hotel info grouped together -->
+          <tr>
+            <td class="label-cell">Hotel Name:</td>
+            <td id="previewHotelName"></td>
+            <td class="label-cell">Hotel Phone:</td>
+            <td id="previewHotelPhone"></td>
+          </tr>
+
+          <tr>
+            <td class="label-cell">Hotel Address:</td>
+            <td id="previewHotelAddress" colspan="3"></td>
+          </tr>
+
+          <!-- room / meal / contact info together -->
+          <tr>
+            <td class="label-cell">Contact Person:</td>
+            <td id="previewContactPerson"></td>
+            <td class="label-cell">Meal Plan:</td>
+            <td id="previewMealPlan"></td>
+          </tr>
+
+          <tr>
+            <td class="label-cell">Room Category:</td>
+            <td id="previewRoomCategory"></td>
+            <td class="label-cell">Room Type:</td>
+            <td id="previewRoomType"></td>
+          </tr>
+
+          <!-- stay details row -->
+          <tr class="stay-row">
+            <th>Check-in</th>
+            <th>Check-out</th>
+            <th>Number of Days</th>
+            <th>Rooms</th>
+          </tr>
+          <tr class="stay-row">
+            <td id="previewCheckin"></td>
+            <td id="previewCheckout"></td>
+            <td id="previewNumDays"></td>
+            <td id="previewNumRooms_2"></td>
+          </tr>
+        </table>
+
+        <!-- Guests Table -->
+        <div class="section-header">Guest Information</div>
+        <div class="guest-table-wrapper">
+          <table class="guest-table">
+            <thead>
+              <tr>
+                <th>Guest Name</th>
+                <th>Age</th>
+              </tr>
+            </thead>
+            <tbody id="guestTableBody">
+              <tr><td style="height:18px;"></td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Package / Remarks -->
+        <div class="section-header">Package / Remarks</div>
+        <div class="details-block">
+          <div class="details-line">
+            <span class="details-label">Inclusions:</span>
+            <span id="previewInclusions"></span>
           </div>
-
-          <div class="col">
-            <div class="field-line">
-              <span class="field-label">Check-in Date:</span>
-              <span class="field-value" id="previewCheckin"></span>
-            </div>
-            <div class="field-line">
-              <span class="field-label">Check-out Date:</span>
-              <span class="field-value" id="previewCheckout"></span>
-            </div>
-            <div class="field-line">
-              <span class="field-label">Booking Ref No.:</span>
-              <span class="field-value" id="previewBookingRef"></span>
-            </div>
+          <div class="details-line">
+            <span class="details-label">Payment:</span>
+            <span id="previewPayment"></span>
+          </div>
+          <div class="details-line">
+            <span class="details-label">Remarks / Special Requests:</span>
+            <span id="previewRemarks"></span>
           </div>
         </div>
 
-        <hr class="section-divider"/>
-
-        <!-- Hotel contact block -->
-        <div class="field-line">
-          <span class="field-label">Hotel Name:</span>
-          <span class="field-value" id="previewHotelName"></span>
-        </div>
-
-        <div class="field-line">
-          <span class="field-label">Hotel Address:</span>
-          <span class="small-value" id="previewHotelAddress"></span>
-        </div>
-
-        <div class="two-col">
-          <div class="col">
-            <div class="field-label">Contact Person:</div>
-            <div class="small-value" id="previewContactPerson"></div>
-          </div>
-          <div class="col">
-            <div class="field-label">Hotel Phone:</div>
-            <div class="small-value" id="previewHotelPhone"></div>
-          </div>
-        </div>
-
-        <div class="two-col" style="margin-top:12px;">
-          <div class="col">
-            <div class="field-line">
-              <span class="field-label">Room Category:</span>
-              <span class="field-value" id="previewRoomCategory"></span>
-            </div>
-          </div>
-          <div class="col">
-            <div class="field-line">
-              <span class="field-label">Room Type:</span>
-              <span class="field-value" id="previewRoomType"></span>
-            </div>
-          </div>
-        </div>
-
-        <div class="field-line">
-          <span class="field-label">Meal Plan:</span>
-          <span class="field-value" id="previewMealPlan"></span>
-        </div>
-
-        <!-- Inclusions / Payment / Remarks -->
-        <div class="field-line" style="margin-top:12px;">
-          <span class="field-label">Inclusions:</span>
-          <span class="small-value" id="previewInclusions"></span>
-        </div>
-
-        <div class="field-line" style="margin-top:12px;">
-          <span class="field-label">Payment:</span>
-          <span class="field-value" id="previewPayment"></span>
-        </div>
-
-        <div class="field-line" style="margin-top:12px;">
-          <span class="field-label">Remarks / Special Requests:</span>
-          <span class="small-value" id="previewRemarks"></span>
-        </div>
-
-        <!-- Footer / authorization -->
+        <!-- Authorization -->
+        <div class="section-header">Authorization</div>
         <div class="footer-block">
           <div class="footer-flex">
             <div class="auth-block">
-              <div>Authorized by: <span id="previewAuthorizedBy"></span></div>
-              <div>Designation: <span id="previewDesignation"></span></div>
+              <div>Authorized by: <strong>Mr Kishor Agrawal</strong></div>
+              <div>Designation: <strong>Tour Agent</strong></div>
               <div>Date: <span id="previewAuthDate"></span></div>
             </div>
             <div class="seal-box">
@@ -586,108 +733,168 @@
           </div>
         </div>
 
-      </div> <!-- /voucher -->
-    </div> <!-- /voucher-preview-wrapper -->
+        <div class="thankyou-bar">
+          Thanks for business with us! Please visit us again!
+        </div>
 
-  </div> <!-- /container -->
+      </div>
+    </div>
+
+  </div>
 
   <script>
-    // convenience getter
-    function val(id) {
-      return document.getElementById(id).value || "";
+    const MAX_GUESTS = 20;
+    const guestListForm = document.getElementById('guestListForm');
+    const addGuestBtn = document.getElementById('addGuestBtn');
+    const guestLimitNote = document.getElementById('guestLimitNote');
+
+    function val(id){
+      const el=document.getElementById(id);
+      return el?(el.value||""):"";
     }
 
-    function updatePreviewFields() {
-      // simple text fields
+    function calcNumDays(checkin, checkout){
+      if(!checkin||!checkout) return "";
+      const a=new Date(checkin), b=new Date(checkout);
+      const diff=b-a;
+      if(isNaN(diff)||diff<0) return "";
+      return (diff/(1000*60*60*24)).toString();
+    }
+
+    function updateGuestLimitNote(){
+      const count=guestListForm.querySelectorAll('.guest-row').length;
+      guestLimitNote.textContent=count+" / "+MAX_GUESTS;
+      addGuestBtn.disabled = count>=MAX_GUESTS;
+    }
+
+    function addGuestRow(nameVal="", ageVal=""){
+      const count=guestListForm.querySelectorAll('.guest-row').length;
+      if(count>=MAX_GUESTS) return;
+
+      const row=document.createElement('div');
+      row.className='guest-row';
+      row.innerHTML=`
+        <input type="text" class="guest-name" placeholder="Guest Name" value="${nameVal}">
+        <input type="number" class="guest-age" placeholder="Age" min="0" value="${ageVal}">
+        <button type="button" class="guest-remove" title="Remove">✕</button>
+      `;
+      guestListForm.appendChild(row);
+      updateGuestLimitNote();
+      updatePreviewFields();
+    }
+
+    function getGuests(){
+      const rows=[...guestListForm.querySelectorAll('.guest-row')];
+      return rows.map(r=>({
+        name:r.querySelector('.guest-name')?.value?.trim()||"",
+        age:r.querySelector('.guest-age')?.value?.trim()||""
+      })).filter(g=>g.name||g.age);
+    }
+
+    function escapeHtml(str){
+      return (str||"").replace(/[&<>"']/g, m=>({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+      }[m]));
+    }
+
+    function buildGuestTableRows(){
+      const guests=getGuests();
+      if(guests.length===0){
+        return `<tr><td style="height:18px;"></td><td></td></tr>`;
+      }
+      return guests.map(g=>`
+        <tr>
+          <td>${escapeHtml(g.name)}</td>
+          <td>${escapeHtml(g.age)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function updatePreviewFields(){
+      // Basic info
       document.getElementById('previewGuestName').textContent    = val('guestName');
       document.getElementById('previewGroupName').textContent    = val('groupName');
-      document.getElementById('previewNumGuests').textContent    = val('numGuests');
+
+      // numGuests: auto-count if left blank
+      const guestsCount=getGuests().length;
+      const numGuestsInput=val('numGuests');
+      const showGuests = numGuestsInput || (guestsCount?String(guestsCount):"");
+      document.getElementById('previewNumGuests').textContent    = showGuests;
+
       document.getElementById('previewNumRooms').textContent     = val('numRooms');
-      document.getElementById('previewCheckin').textContent      = val('checkin');
-      document.getElementById('previewCheckout').textContent     = val('checkout');
       document.getElementById('previewHotelName').textContent    = val('hotelName');
-      document.getElementById('previewHotelAddress').textContent = val('hotelAddress');
-      document.getElementById('previewContactPerson').textContent= val('contactPerson');
       document.getElementById('previewHotelPhone').textContent   = val('hotelPhone');
+      document.getElementById('previewContactPerson').textContent= val('contactPerson');
+      document.getElementById('previewMealPlan').textContent     = val('mealPlan');
       document.getElementById('previewRoomCategory').textContent = val('roomCategory');
       document.getElementById('previewRoomType').textContent     = val('roomType');
-      document.getElementById('previewMealPlan').textContent     = val('mealPlan');
       document.getElementById('previewBookingRef').textContent   = val('bookingRef');
+      document.getElementById('previewHotelAddress').textContent = val('hotelAddress');
       document.getElementById('previewVoucherNo').textContent    = val('voucherNo');
       document.getElementById('previewInclusions').textContent   = val('inclusions');
       document.getElementById('previewRemarks').textContent      = val('remarks');
+      document.getElementById('previewCheckin').textContent      = val('checkin');
+      document.getElementById('previewCheckout').textContent     = val('checkout');
+      document.getElementById('previewAuthDate').textContent     = val('authDate');
 
-      // payment radio
-      const paymentSel = document.querySelector('input[name="payment"]:checked');
-      document.getElementById('previewPayment').textContent = paymentSel ? paymentSel.value : "";
+      // Days + repeat rooms
+      const nd=calcNumDays(val('checkin'),val('checkout'));
+      document.getElementById('previewNumDays').textContent      = nd;
+      document.getElementById('previewNumRooms_2').textContent   = val('numRooms');
 
-      // GST / auth block
-      document.getElementById('previewGst').textContent           = val('gst') || "___________________________";
-      document.getElementById('previewAuthorizedBy').textContent  = val('authorizedBy');
-      document.getElementById('previewDesignation').textContent   = val('designation');
-      document.getElementById('previewAuthDate').textContent      = val('authDate');
+      // payment
+      const paymentSel=document.querySelector('input[name="payment"]:checked');
+      document.getElementById('previewPayment').textContent = paymentSel? paymentSel.value : "";
+
+      // guest table
+      document.getElementById('guestTableBody').innerHTML = buildGuestTableRows();
     }
 
-    // live update on every input change
-    document.addEventListener('input', function(e){
-      if (
-        e.target.closest('.form-section')
-      ) {
+    // Events
+    document.addEventListener('input', e=>{
+      if(e.target.closest('.form-section')){
         updatePreviewFields();
       }
     });
 
-    // also update when radio buttons change (some browsers don't fire 'input' for radio)
     document.getElementById('paymentRadios').addEventListener('change', updatePreviewFields);
 
-    // Generate PDF
-    document.getElementById('generatePdf').addEventListener('click', async function(){
-      updatePreviewFields(); // make sure preview is synced
+    addGuestBtn.addEventListener('click',()=>addGuestRow());
 
-      const voucher = document.getElementById('voucher');
+    guestListForm.addEventListener('click', e=>{
+      if(e.target.classList.contains('guest-remove')){
+        e.target.closest('.guest-row').remove();
+        updateGuestLimitNote();
+        updatePreviewFields();
+      }
+    });
 
-      const scale = 2; // high-res
-      const canvas = await html2canvas(voucher, {
-        scale: scale,
-        useCORS: true,
-        backgroundColor: "#ffffff"
+    guestListForm.addEventListener('input', updatePreviewFields);
+
+    // PDF
+    document.getElementById('generatePdf').addEventListener('click', async ()=>{
+      updatePreviewFields();
+      const voucher=document.getElementById('voucher');
+      const canvas=await html2canvas(voucher,{
+        scale:2,
+        useCORS:true,
+        backgroundColor:"#ffffff"
       });
-
-      const imgData = canvas.toDataURL('image/png');
-      const { jsPDF } = window.jspdf;
-
-      const pdf = new jsPDF('p','mm','a4');
-      const pageWidth  = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      // Margin ~10mm
-      const margin = 10;
-      const imgWidthMM = pageWidth - margin*2;
-      const imgHeightMM = (canvas.height * imgWidthMM) / canvas.width;
-
-      // Add image to the PDF
-      pdf.addImage(
-        imgData,
-        'PNG',
-        margin,
-        margin,
-        imgWidthMM,
-        imgHeightMM
-      );
-
-      // File name uses Guest Name if available
-      const fileName = (val('guestName') || 'TourTok_Voucher')
-        .trim()
-        .replace(/\s+/g,'_')
-        + '_voucher.pdf';
-
+      const imgData=canvas.toDataURL('image/png');
+      const { jsPDF }=window.jspdf;
+      const pdf=new jsPDF('p','mm','a4');
+      const pageWidth=pdf.internal.pageSize.getWidth();
+      const margin=10;
+      const imgWidthMM=pageWidth - margin*2;
+      const imgHeightMM=(canvas.height*imgWidthMM)/canvas.width;
+      pdf.addImage(imgData,'PNG',margin,margin,imgWidthMM,imgHeightMM);
+      const fileName=(val('guestName')||'TourTok_Voucher').trim().replace(/\s+/g,'_')+'_voucher.pdf';
       pdf.save(fileName);
     });
 
-    // initialize preview with blanks so layout doesn't look broken
+    // Init
+    updateGuestLimitNote();
     updatePreviewFields();
   </script>
-
 </body>
 </html>
-LogoD.jpg
