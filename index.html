@@ -11,18 +11,15 @@
 
   <style>
     :root{
-      /* palette pulled from logo */
-      --navy:#1f2330;            /* dark text/border (logo background tone) */
-      --teal-soft:#e9fdff;       /* very light teal fill */
-      --teal-accent:#12cdd6;     /* saturated teal accent from logo */
-      --magenta-soft:#ffe8f5;    /* pale magenta chip */
-      --bg-page:#f5f7fa;         /* page background (not dark) */
+      --navy:#1f2330;
+      --teal-soft:#e9fdff;
+      --teal-accent:#12cdd6;
+      --magenta-soft:#ffe8f5;
+      --bg-page:#f5f7fa;
       --panel-bg:#ffffff;
-
       --radius-lg:12px;
       --radius-sm:8px;
-
-      --border-line:#1f2330;     /* use navy for table borders to feel branded */
+      --border-line:#1f2330;
     }
 
     *{box-sizing:border-box;}
@@ -77,7 +74,6 @@
       color:var(--navy);
     }
 
-    /* Top bar with light teal accent */
     .voucher-top-bar{
       background:var(--teal-soft);
       color:var(--navy);
@@ -138,7 +134,7 @@
     }
     .voucher-right div{margin-bottom:4px;}
 
-    /* Info table under header */
+    /* Info table */
     .info-grid{
       border:1px solid var(--border-line);
       border-top:none;
@@ -217,7 +213,6 @@
       color:var(--navy);
     }
 
-    /* Details block */
     .details-block{
       border:1px solid var(--border-line);
       border-top:none;
@@ -231,7 +226,6 @@
     .details-line{margin-bottom:8px;}
     .details-label{font-weight:700;}
 
-    /* Footer/auth */
     .footer-block{
       border:1px solid var(--border-line);
       border-top:none;
@@ -607,7 +601,7 @@
         <div class="voucher-header">
           <div class="voucher-left">
             <div class="voucher-logo">
-              <!-- Put your actual logo file at same level as this HTML and name it LogoD.jpg -->
+              <!-- serve from same origin over http(s) to avoid taint -->
               <img src="LogoD.jpg" alt="TourTok Logo">
             </div>
             <div class="voucher-brand">
@@ -615,13 +609,13 @@
               <div class="contact-line">
                 <b>Phone</b>: +91 9829013066<br>
                 <b>Email</b>: tour2tok@gmail.com<br>
-                <b>Website</b>: <a href="url">www.tourtok.in</a>
+                <b>Website</b>: <span style="text-decoration:none;color:inherit;">www.tourtok.in</span>
               </div>
             </div>
           </div>
 
           <div class="voucher-right">
-            <div><b>GST No.</b>: <strong>12345</strong></div>
+            <div><b>GST No.</b>: <strong>08ABHPA4270A1ZA</strong></div>
             <div><b>Voucher No.</b>: <strong id="previewVoucherNo"></strong></div>
           </div>
         </div>
@@ -642,7 +636,6 @@
             <td id="previewNumRooms"></td>
           </tr>
 
-          <!-- hotel info grouped together -->
           <tr>
             <td class="label-cell">Hotel Name:</td>
             <td id="previewHotelName"></td>
@@ -655,7 +648,6 @@
             <td id="previewHotelAddress" colspan="3"></td>
           </tr>
 
-          <!-- room / meal / contact info together -->
           <tr>
             <td class="label-cell">Contact Person:</td>
             <td id="previewContactPerson"></td>
@@ -670,7 +662,6 @@
             <td id="previewRoomType"></td>
           </tr>
 
-          <!-- stay details row -->
           <tr class="stay-row">
             <th>Check-in</th>
             <th>Check-out</th>
@@ -748,6 +739,15 @@
     const addGuestBtn = document.getElementById('addGuestBtn');
     const guestLimitNote = document.getElementById('guestLimitNote');
 
+    // helper: safely set textContent if element exists
+    function setText(id, text) {
+      const el = document.getElementById(id);
+      if (el) {
+        // .textContent works fine for <td> if element exists; this guard prevents null errors
+        el.textContent = text || "";
+      }
+    }
+
     function val(id){
       const el=document.getElementById(id);
       return el?(el.value||""):"";
@@ -811,90 +811,99 @@
     }
 
     function updatePreviewFields(){
-      // Basic info
-      document.getElementById('previewGuestName').textContent    = val('guestName');
-      document.getElementById('previewGroupName').textContent    = val('groupName');
+      // Lead / Group
+      setText('previewGuestName', val('guestName'));
+      setText('previewGroupName', val('groupName'));
 
       // numGuests: auto-count if left blank
       const guestsCount=getGuests().length;
       const numGuestsInput=val('numGuests');
-      const showGuests = numGuestsInput || (guestsCount?String(guestsCount):"");
-      document.getElementById('previewNumGuests').textContent    = showGuests;
+      const showGuests=numGuestsInput || (guestsCount?String(guestsCount):"");
+      setText('previewNumGuests', showGuests);
 
-      document.getElementById('previewNumRooms').textContent     = val('numRooms');
-      document.getElementById('previewHotelName').textContent    = val('hotelName');
-      document.getElementById('previewHotelPhone').textContent   = val('hotelPhone');
-      document.getElementById('previewContactPerson').textContent= val('contactPerson');
-      document.getElementById('previewMealPlan').textContent     = val('mealPlan');
-      document.getElementById('previewRoomCategory').textContent = val('roomCategory');
-      document.getElementById('previewRoomType').textContent     = val('roomType');
-      document.getElementById('previewBookingRef').textContent   = val('bookingRef');
-      document.getElementById('previewHotelAddress').textContent = val('hotelAddress');
-      document.getElementById('previewVoucherNo').textContent    = val('voucherNo');
-      document.getElementById('previewInclusions').textContent   = val('inclusions');
-      document.getElementById('previewRemarks').textContent      = val('remarks');
-      document.getElementById('previewCheckin').textContent      = val('checkin');
-      document.getElementById('previewCheckout').textContent     = val('checkout');
-      document.getElementById('previewAuthDate').textContent     = val('authDate');
+      // numeric + hotel info
+      setText('previewNumRooms', val('numRooms'));
+      setText('previewHotelName', val('hotelName'));
+      setText('previewHotelPhone', val('hotelPhone'));
+      setText('previewContactPerson', val('contactPerson'));
+      setText('previewMealPlan', val('mealPlan'));
+      setText('previewRoomCategory', val('roomCategory'));
+      setText('previewRoomType', val('roomType'));
+      setText('previewBookingRef', val('bookingRef'));
+      setText('previewVoucherNo', val('voucherNo'));
+      setText('previewInclusions', val('inclusions'));
+      setText('previewRemarks', val('remarks'));
+      setText('previewCheckin', val('checkin'));
+      setText('previewCheckout', val('checkout'));
+      setText('previewAuthDate', val('authDate'));
 
-      // Days + repeat rooms
+      // this is the one that was giving you trouble:
+      setText('previewHotelAddress', val('hotelAddress'));
+
+      // days / rooms repeat
       const nd=calcNumDays(val('checkin'),val('checkout'));
-      document.getElementById('previewNumDays').textContent      = nd;
-      document.getElementById('previewNumRooms_2').textContent   = val('numRooms');
+      setText('previewNumDays', nd);
+      setText('previewNumRooms_2', val('numRooms'));
 
       // payment
       const paymentSel=document.querySelector('input[name="payment"]:checked');
-      document.getElementById('previewPayment').textContent = paymentSel? paymentSel.value : "";
+      setText('previewPayment', paymentSel ? paymentSel.value : "");
 
       // guest table
-      document.getElementById('guestTableBody').innerHTML = buildGuestTableRows();
+      const bodyEl=document.getElementById('guestTableBody');
+      if(bodyEl){
+        bodyEl.innerHTML = buildGuestTableRows();
+      }
     }
 
-    // Events
-    document.addEventListener('input', e=>{
-      if(e.target.closest('.form-section')){
-        updatePreviewFields();
-      }
-    });
+    document.addEventListener('DOMContentLoaded', () => {
+      // wire events AFTER DOM is ready
 
-    document.getElementById('paymentRadios').addEventListener('change', updatePreviewFields);
-
-    addGuestBtn.addEventListener('click',()=>addGuestRow());
-
-    guestListForm.addEventListener('click', e=>{
-      if(e.target.classList.contains('guest-remove')){
-        e.target.closest('.guest-row').remove();
-        updateGuestLimitNote();
-        updatePreviewFields();
-      }
-    });
-
-    guestListForm.addEventListener('input', updatePreviewFields);
-
-    // PDF
-    document.getElementById('generatePdf').addEventListener('click', async ()=>{
-      updatePreviewFields();
-      const voucher=document.getElementById('voucher');
-      const canvas=await html2canvas(voucher,{
-        scale:2,
-        useCORS:true,
-        backgroundColor:"#ffffff"
+      document.addEventListener('input', e=>{
+        if(e.target.closest('.form-section')){
+          updatePreviewFields();
+        }
       });
-      const imgData=canvas.toDataURL('image/png');
-      const { jsPDF }=window.jspdf;
-      const pdf=new jsPDF('p','mm','a4');
-      const pageWidth=pdf.internal.pageSize.getWidth();
-      const margin=10;
-      const imgWidthMM=pageWidth - margin*2;
-      const imgHeightMM=(canvas.height*imgWidthMM)/canvas.width;
-      pdf.addImage(imgData,'PNG',margin,margin,imgWidthMM,imgHeightMM);
-      const fileName=(val('guestName')||'TourTok_Voucher').trim().replace(/\s+/g,'_')+'_voucher.pdf';
-      pdf.save(fileName);
-    });
 
-    // Init
-    updateGuestLimitNote();
-    updatePreviewFields();
+      document.getElementById('paymentRadios').addEventListener('change', updatePreviewFields);
+
+      addGuestBtn.addEventListener('click',()=>addGuestRow());
+
+      guestListForm.addEventListener('click', e=>{
+        if(e.target.classList.contains('guest-remove')){
+          e.target.closest('.guest-row').remove();
+          updateGuestLimitNote();
+          updatePreviewFields();
+        }
+      });
+
+      guestListForm.addEventListener('input', updatePreviewFields);
+
+      // PDF
+      document.getElementById('generatePdf').addEventListener('click', async ()=>{
+        updatePreviewFields();
+        const voucher=document.getElementById('voucher');
+        const canvas=await html2canvas(voucher,{
+          scale:2,
+          useCORS:true,
+          backgroundColor:"#ffffff"
+        });
+        const imgData=canvas.toDataURL('image/png');
+        const { jsPDF }=window.jspdf;
+        const pdf=new jsPDF('p','mm','a4');
+        const pageWidth=pdf.internal.pageSize.getWidth();
+        const margin=10;
+        const imgWidthMM=pageWidth - margin*2;
+        const imgHeightMM=(canvas.height*imgWidthMM)/canvas.width;
+        pdf.addImage(imgData,'PNG',margin,margin,imgWidthMM,imgHeightMM);
+        const fileName=(val('guestName')||'TourTok_Voucher').trim().replace(/\s+/g,'_')+'_voucher.pdf';
+        pdf.save(fileName);
+      });
+
+      // init once DOM is stable
+      updateGuestLimitNote();
+      updatePreviewFields();
+    });
   </script>
 </body>
 </html>
