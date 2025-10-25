@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TourTok Voucher Generator</title>
+
+  <!-- jsPDF and html2canvas from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      --brand-bg: #e6f0ff;
+      --brand-primary: #003399;
+      --text-dark: #000;
+      --panel-bg: #fff;
+      --radius-lg: 12px;
+      --radius-sm: 6px;
+      --border-light: #d5d9e8;
+      --border-mid: #999;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 0;
+      background-color: var(--brand-bg);
+      color: var(--text-dark);
+      padding: 20px;
+    }
+
+    .container {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .form-section {
+      flex: 0 1 360px;
+      background: var(--panel-bg);
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .voucher-preview-wrapper {
+      flex: 1 1 700px;
+      background: var(--brand-bg);
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      color: var(--text-dark);
+      overflow-x: auto;
+    }
+
+    /* Voucher card itself (screen preview size ~A4 width) */
+    #voucher {
+      width: 794px; /* ~A4 @96dpi */
+      background: #fff;
+      border-radius: var(--radius-lg);
+      color: var(--text-dark);
+      border: 1px solid var(--border-light);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      padding: 24px 24px 32px;
+      box-sizing: border-box;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Header area in voucher */
+    .voucher-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      row-gap: 12px;
+    }
+
+    .voucher-header-left {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .voucher-logo img {
+      width: 80px;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border-light);
+      object-fit: contain;
+      background: #fff;
+    }
+
+    .voucher-brand h1 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+      color: var(--brand-primary);
+      font-weight: 700;
+    }
+
+    .voucher-brand .meta-line {
+      font-size: 12px;
+      margin-top: 4px;
+      font-weight: 600;
+      color: #000;
+    }
+
+    .voucher-brand .contact-line {
+      font-size: 11px;
+      margin-top: 4px;
+      color: #333;
+      line-height: 1.4;
+    }
+
+    .voucher-header-right {
+      text-align: right;
+      font-size: 11px;
+      line-height: 1.4;
+      color: #000;
+    }
+
+    .voucher-header-right div {
+      margin-bottom: 4px;
+    }
+
+    .section-divider {
+      border: 0;
+      border-top: 1px solid var(--border-light);
+      margin: 16px 0;
+    }
+
+    /* Two-column blocks inside voucher */
+    .two-col {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .two-col > .col {
+      flex: 1 1 280px;
+      min-width: 0;
+    }
+
+    .field-line {
+      margin-bottom: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      font-size: 13px;
+    }
+    .field-label {
+      font-weight: bold;
+      color: #000;
+    }
+    .field-value {
+      color: #000;
+      word-break: break-word;
+    }
+
+    .small-value {
+      font-size: 12px;
+      color: #444;
+      word-break: break-word;
+      white-space: pre-line;
+    }
+
+    /* Footer / signature block */
+    .footer-block {
+      margin-top: 20px;
+      font-size: 12px;
+    }
+    .footer-flex {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      row-gap: 16px;
+    }
+    .auth-block > div {
+      margin-bottom: 6px;
+    }
+
+    .seal-box {
+      text-align: center;
+    }
+    .seal-placeholder {
+      height: 60px;
+      width: 200px;
+      border: 1px dashed var(--border-mid);
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      color: #555;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Form styles */
+    h2.form-title {
+      color: var(--brand-primary);
+      margin-top: 0;
+      font-size: 20px;
+      line-height: 1.2;
+      border-bottom: 2px solid var(--brand-primary);
+      padding-bottom: 6px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+      font-size: 13px;
+      color: #000;
+    }
+
+    input[type=text],
+    input[type=number],
+    input[type=date],
+    textarea,
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border: 1px solid #ccc;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+
+    .row-inline {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .row-inline > div {
+      flex: 1 1 140px;
+      min-width: 0;
+    }
+
+    .payment-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      font-weight: normal;
+      font-size: 13px;
+      color: #000;
+    }
+    .payment-row label {
+      margin-top: 0;
+      font-weight: normal;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+    }
+    .payment-row input[type=radio] {
+      margin: 0;
+    }
+
+    button.generate-btn {
+      margin-top: 20px;
+      background-color: var(--brand-primary);
+      color: white;
+      padding: 12px 18px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    button.generate-btn:hover {
+      background-color: #002080;
+    }
+
+    .hint {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #444;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 900px) {
+      .voucher-preview-wrapper {
+        flex-basis: 100%;
+        order: 3;
+      }
+      #voucher {
+        width: 100%;
+        min-width: 600px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- LEFT: FORM -->
+    <div class="form-section">
+      <h2 class="form-title">Fill Voucher Details</h2>
+
+      <div>
+        <label>Guest Name
+          <input id="guestName" type="text" placeholder="Guest Name"/>
+        </label>
+
+        <label>Group Name
+          <input id="groupName" type="text" placeholder="Group / Company"/>
+        </label>
+
+        <div class="row-inline">
+          <div>
+            <label>No. of Guests
+              <input id="numGuests" type="number" min="1"/>
+            </label>
+          </div>
+          <div>
+            <label>No. of Rooms
+              <input id="numRooms" type="number" min="1"/>
+            </label>
+          </div>
+        </div>
+
+        <div class="row-inline">
+          <div>
+            <label>Check-in Date
+              <input id="checkin" type="date"/>
+            </label>
+          </div>
+          <div>
+            <label>Check-out Date
+              <input id="checkout" type="date"/>
+            </label>
+          </div>
+        </div>
+
+        <label>Hotel Name
+          <input id="hotelName" type="text" placeholder="Hotel / Resort"/>
+        </label>
+
+        <label>Hotel Address
+          <textarea id="hotelAddress" rows="2" placeholder="Full address"></textarea>
+        </label>
+
+        <div class="row-inline">
+          <div>
+            <label>Contact Person
+              <input id="contactPerson" type="text" placeholder="Manager / Front Desk"/>
+            </label>
+          </div>
+          <div>
+            <label>Hotel Phone
+              <input id="hotelPhone" type="text" placeholder="+91 ..."/>
+            </label>
+          </div>
+        </div>
+
+        <div class="row-inline">
+          <div>
+            <label>Room Category
+              <input id="roomCategory" type="text" placeholder="Deluxe / Suite / etc."/>
+            </label>
+          </div>
+          <div>
+            <label>Room Type
+              <input id="roomType" type="text" placeholder="Twin / Double / etc."/>
+            </label>
+          </div>
+        </div>
+
+        <label>Meal Plan
+          <select id="mealPlan">
+            <option value="">Select</option>
+            <option value="EP">EP</option>
+            <option value="CP">CP</option>
+            <option value="MAP">MAP</option>
+            <option value="AP">AP</option>
+          </select>
+        </label>
+
+        <div class="row-inline">
+          <div>
+            <label>Booking Ref No.
+              <input id="bookingRef" type="text"/>
+            </label>
+          </div>
+          <div>
+            <label>Voucher No.
+              <input id="voucherNo" type="text"/>
+            </label>
+          </div>
+        </div>
+
+        <label>Inclusions
+          <textarea id="inclusions" rows="3" placeholder="List all inclusions (e.g. breakfast, airport pickup, taxes...)"></textarea>
+        </label>
+
+        <label>Payment Details</label>
+        <div class="payment-row" id="paymentRadios">
+          <label><input type="radio" name="payment" value="Prepaid" checked> Prepaid</label>
+          <label><input type="radio" name="payment" value="Guest Pay"> Guest Pay</label>
+          <label><input type="radio" name="payment" value="Partial"> Partial</label>
+        </div>
+
+        <label>Remarks / Special Requests
+          <textarea id="remarks" rows="2" placeholder="Early check-in, special arrangements, etc."></textarea>
+        </label>
+
+        <label>GST No.
+          <input id="gst" type="text" placeholder="GST Number"/>
+        </label>
+
+        <div class="row-inline">
+          <div>
+            <label>Authorized by
+              <input id="authorizedBy" type="text" placeholder="Your Name"/>
+            </label>
+          </div>
+          <div>
+            <label>Designation
+              <input id="designation" type="text" placeholder="Your Title"/>
+            </label>
+          </div>
+        </div>
+
+        <label>Date
+          <input id="authDate" type="date"/>
+        </label>
+
+        <button class="generate-btn" id="generatePdf" type="button">Generate PDF</button>
+
+        <div class="hint">
+          The preview updates live as you type. When you're happy, click "Generate PDF" to download an A4 voucher.
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: VOUCHER PREVIEW -->
+    <div class="voucher-preview-wrapper">
+      <div id="voucher">
+
+        <!-- Header / Logo / Contact -->
+        <div class="voucher-header">
+          <div class="voucher-header-left">
+            <div class="voucher-logo">
+              <!-- Your logo image file needs to be in the same folder, named LogoD.jpg -->
+              <img src="LogoD.jpg" alt="TourTok Logo">
+            </div>
+            <div class="voucher-brand">
+              <h1>TourTok</h1>
+              <div class="meta-line">HOTEL BOOKING VOUCHER</div>
+              <div class="contact-line">
+                Phone: +91 9829013066<br>
+                Email: tour2tok@gmail.com<br>
+                Website: www.tourtok.in
+              </div>
+            </div>
+          </div>
+
+          <div class="voucher-header-right">
+            <div>GST No.: <span id="previewGst">___________________________</span></div>
+            <div>Voucher No.: <strong id="previewVoucherNo"></strong></div>
+          </div>
+        </div>
+
+        <hr class="section-divider"/>
+
+        <!-- Guest / Stay details in two columns -->
+        <div class="two-col">
+          <div class="col">
+            <div class="field-line">
+              <span class="field-label">Guest Name:</span>
+              <span class="field-value" id="previewGuestName"></span>
+            </div>
+            <div class="field-line">
+              <span class="field-label">Group Name:</span>
+              <span class="field-value" id="previewGroupName"></span>
+            </div>
+            <div class="field-line">
+              <span class="field-label">No. of Guests:</span>
+              <span class="field-value" id="previewNumGuests"></span>
+            </div>
+            <div class="field-line">
+              <span class="field-label">No. of Rooms:</span>
+              <span class="field-value" id="previewNumRooms"></span>
+            </div>
+          </div>
+
+          <div class="col">
+            <div class="field-line">
+              <span class="field-label">Check-in Date:</span>
+              <span class="field-value" id="previewCheckin"></span>
+            </div>
+            <div class="field-line">
+              <span class="field-label">Check-out Date:</span>
+              <span class="field-value" id="previewCheckout"></span>
+            </div>
+            <div class="field-line">
+              <span class="field-label">Booking Ref No.:</span>
+              <span class="field-value" id="previewBookingRef"></span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="section-divider"/>
+
+        <!-- Hotel contact block -->
+        <div class="field-line">
+          <span class="field-label">Hotel Name:</span>
+          <span class="field-value" id="previewHotelName"></span>
+        </div>
+
+        <div class="field-line">
+          <span class="field-label">Hotel Address:</span>
+          <span class="small-value" id="previewHotelAddress"></span>
+        </div>
+
+        <div class="two-col">
+          <div class="col">
+            <div class="field-label">Contact Person:</div>
+            <div class="small-value" id="previewContactPerson"></div>
+          </div>
+          <div class="col">
+            <div class="field-label">Hotel Phone:</div>
+            <div class="small-value" id="previewHotelPhone"></div>
+          </div>
+        </div>
+
+        <div class="two-col" style="margin-top:12px;">
+          <div class="col">
+            <div class="field-line">
+              <span class="field-label">Room Category:</span>
+              <span class="field-value" id="previewRoomCategory"></span>
+            </div>
+          </div>
+          <div class="col">
+            <div class="field-line">
+              <span class="field-label">Room Type:</span>
+              <span class="field-value" id="previewRoomType"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-line">
+          <span class="field-label">Meal Plan:</span>
+          <span class="field-value" id="previewMealPlan"></span>
+        </div>
+
+        <!-- Inclusions / Payment / Remarks -->
+        <div class="field-line" style="margin-top:12px;">
+          <span class="field-label">Inclusions:</span>
+          <span class="small-value" id="previewInclusions"></span>
+        </div>
+
+        <div class="field-line" style="margin-top:12px;">
+          <span class="field-label">Payment:</span>
+          <span class="field-value" id="previewPayment"></span>
+        </div>
+
+        <div class="field-line" style="margin-top:12px;">
+          <span class="field-label">Remarks / Special Requests:</span>
+          <span class="small-value" id="previewRemarks"></span>
+        </div>
+
+        <!-- Footer / authorization -->
+        <div class="footer-block">
+          <div class="footer-flex">
+            <div class="auth-block">
+              <div>Authorized by: <span id="previewAuthorizedBy"></span></div>
+              <div>Designation: <span id="previewDesignation"></span></div>
+              <div>Date: <span id="previewAuthDate"></span></div>
+            </div>
+            <div class="seal-box">
+              <div class="seal-placeholder">Seal &amp; Signature</div>
+            </div>
+          </div>
+        </div>
+
+      </div> <!-- /voucher -->
+    </div> <!-- /voucher-preview-wrapper -->
+
+  </div> <!-- /container -->
+
+  <script>
+    // convenience getter
+    function val(id) {
+      return document.getElementById(id).value || "";
+    }
+
+    function updatePreviewFields() {
+      // simple text fields
+      document.getElementById('previewGuestName').textContent    = val('guestName');
+      document.getElementById('previewGroupName').textContent    = val('groupName');
+      document.getElementById('previewNumGuests').textContent    = val('numGuests');
+      document.getElementById('previewNumRooms').textContent     = val('numRooms');
+      document.getElementById('previewCheckin').textContent      = val('checkin');
+      document.getElementById('previewCheckout').textContent     = val('checkout');
+      document.getElementById('previewHotelName').textContent    = val('hotelName');
+      document.getElementById('previewHotelAddress').textContent = val('hotelAddress');
+      document.getElementById('previewContactPerson').textContent= val('contactPerson');
+      document.getElementById('previewHotelPhone').textContent   = val('hotelPhone');
+      document.getElementById('previewRoomCategory').textContent = val('roomCategory');
+      document.getElementById('previewRoomType').textContent     = val('roomType');
+      document.getElementById('previewMealPlan').textContent     = val('mealPlan');
+      document.getElementById('previewBookingRef').textContent   = val('bookingRef');
+      document.getElementById('previewVoucherNo').textContent    = val('voucherNo');
+      document.getElementById('previewInclusions').textContent   = val('inclusions');
+      document.getElementById('previewRemarks').textContent      = val('remarks');
+
+      // payment radio
+      const paymentSel = document.querySelector('input[name="payment"]:checked');
+      document.getElementById('previewPayment').textContent = paymentSel ? paymentSel.value : "";
+
+      // GST / auth block
+      document.getElementById('previewGst').textContent           = val('gst') || "___________________________";
+      document.getElementById('previewAuthorizedBy').textContent  = val('authorizedBy');
+      document.getElementById('previewDesignation').textContent   = val('designation');
+      document.getElementById('previewAuthDate').textContent      = val('authDate');
+    }
+
+    // live update on every input change
+    document.addEventListener('input', function(e){
+      if (
+        e.target.closest('.form-section')
+      ) {
+        updatePreviewFields();
+      }
+    });
+
+    // also update when radio buttons change (some browsers don't fire 'input' for radio)
+    document.getElementById('paymentRadios').addEventListener('change', updatePreviewFields);
+
+    // Generate PDF
+    document.getElementById('generatePdf').addEventListener('click', async function(){
+      updatePreviewFields(); // make sure preview is synced
+
+      const voucher = document.getElementById('voucher');
+
+      const scale = 2; // high-res
+      const canvas = await html2canvas(voucher, {
+        scale: scale,
+        useCORS: true,
+        backgroundColor: "#ffffff"
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+
+      const pdf = new jsPDF('p','mm','a4');
+      const pageWidth  = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      // Margin ~10mm
+      const margin = 10;
+      const imgWidthMM = pageWidth - margin*2;
+      const imgHeightMM = (canvas.height * imgWidthMM) / canvas.width;
+
+      // Add image to the PDF
+      pdf.addImage(
+        imgData,
+        'PNG',
+        margin,
+        margin,
+        imgWidthMM,
+        imgHeightMM
+      );
+
+      // File name uses Guest Name if available
+      const fileName = (val('guestName') || 'TourTok_Voucher')
+        .trim()
+        .replace(/\s+/g,'_')
+        + '_voucher.pdf';
+
+      pdf.save(fileName);
+    });
+
+    // initialize preview with blanks so layout doesn't look broken
+    updatePreviewFields();
+  </script>
+
+</body>
+</html>
+LogoD.jpg
