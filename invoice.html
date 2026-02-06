@@ -52,7 +52,7 @@
 
     /* RIGHT */
     .invoice-preview-wrapper{
-      flex:1 1 720px;
+      flex:1 1 820px;
       background:var(--bg-page);
       padding:24px;
       border-radius:var(--radius-lg);
@@ -61,15 +61,16 @@
       border:1px solid rgba(31,35,48,0.08);
     }
 
-    /* A4 */
+    /* PREVIEW (wide for GST table) */
     #invoice{
-      width:794px;
+      width:1100px;              /* wider */
+      max-width:100%;
       background:#fff;
       border-radius:var(--radius-lg);
       border:1px solid rgba(31,35,48,0.15);
       box-shadow:0 2px 8px rgba(0,0,0,.04);
       padding:24px 24px 32px;
-      font-size:12.5px;
+      font-size:12px;            /* slightly smaller */
       line-height:1.35;
       color:var(--navy);
     }
@@ -193,11 +194,20 @@
     }
     .items-list{margin-top:10px;}
     .item-row{
+      border:1px solid rgba(31,35,48,0.2);
+      border-radius:var(--radius-sm);
+      padding:10px;
+      margin-top:10px;
+      background:#fafafa;
+    }
+    .item-row-desc{
+      margin-bottom:8px;
+    }
+    .item-row-fields{
       display:grid;
-      grid-template-columns: 1fr 92px 92px 92px 92px 36px;
+      grid-template-columns: 65px 80px 90px 80px 1fr 36px;
       gap:8px;
       align-items:end;
-      margin-top:10px;
     }
     .item-row input{
       height:38px;
@@ -205,6 +215,17 @@
       font-size:13px;
       border:1px solid rgba(31,35,48,0.3);
       border-radius:var(--radius-sm);
+    }
+    .item-field-label{
+      font-size:10px;
+      font-weight:700;
+      color:var(--navy);
+      margin-bottom:3px;
+      text-transform:uppercase;
+      letter-spacing:0.3px;
+    }
+    .item-row-desc .item-field-label{
+      font-size:11px;
     }
     .item-remove{
       display:inline-flex;
@@ -219,6 +240,23 @@
       font-weight:700;
     }
     .item-remove:hover{background:#d2f9ff;}
+
+    /* Form headers for line items */
+    .items-form-headers{
+      margin-top:10px;
+      font-size:11px;
+      font-weight:800;
+      color:var(--navy);
+      opacity:.85;
+    }
+    .items-form-headers-fields{
+      display:grid;
+      grid-template-columns: 65px 80px 90px 80px 1fr 36px;
+      gap:8px;
+      margin-top:4px;
+    }
+    .items-form-headers .num{ text-align:right; }
+    .items-form-headers .center{ text-align:center; }
 
     /* ===== Preview styles ===== */
     .invoice-top-bar{
@@ -329,13 +367,13 @@
     table.items-table{
       width:100%;
       border-collapse:collapse;
-      font-size:11px;
+      font-size:10px; /* smaller to fit */
       color:var(--navy);
     }
     .items-table th,
     .items-table td{
       border:1px solid var(--border-line);
-      padding:4px 5px;
+      padding:3px 4px; /* tighter */
       text-align:left;
       background:#fff;
       vertical-align:top;
@@ -433,9 +471,17 @@
     }
 
     @media (max-width:900px){
-      .invoice-preview-wrapper{flex-basis:100%; order:3;}
-      #invoice{width:100%; min-width:700px;}
-      .item-row{grid-template-columns: 1fr 92px 92px 92px 92px 36px;}
+      .invoice-preview-wrapper{
+        flex-basis:100%;
+        order:3;
+        overflow-x:auto;
+      }
+      #invoice{
+        width:1100px;
+        min-width:1100px;
+      }
+      .item-row-fields{grid-template-columns: 65px 80px 90px 80px 1fr 36px;}
+      .items-form-headers-fields{grid-template-columns: 65px 80px 90px 80px 1fr 36px;}
     }
   </style>
 </head>
@@ -489,8 +535,21 @@
         </label>
       </div>
       <div>
-        <label>Date of the Trip
+        <label>Email Address
+          <input id="customerEmail" type="text" placeholder="customer@example.com" />
+        </label>
+      </div>
+    </div>
+
+    <div class="row-inline">
+      <div>
+        <label>Trip Start Date
           <input id="tripDate" type="date" />
+        </label>
+      </div>
+      <div>
+        <label>Trip End Date
+          <input id="tripEndDate" type="date" />
         </label>
       </div>
     </div>
@@ -499,7 +558,7 @@
       <input id="customerGstin" type="text" placeholder="Customer GSTIN (optional)" />
     </label>
 
-    <div class="section-title">Bill To / Ship To</div>
+    <div class="section-title">Bill To</div>
 
     <label>Bill To Name
       <input id="billName" type="text" placeholder="Billing name / company" />
@@ -521,35 +580,30 @@
       </div>
     </div>
 
-    <label style="margin-top:10px;font-weight:700;">
-      <input id="copyBillToShipTo" type="checkbox" style="width:auto;margin-right:8px;transform:translateY(1px);" />
-      Copy Bill to Ship to
-    </label>
-
-    <label>Ship To Name
-      <input id="shipName" type="text" placeholder="Shipping name / company" />
-    </label>
-    <label>Ship To Address
-      <textarea id="shipAddress" rows="2" placeholder="Shipping address"></textarea>
-    </label>
-
-    <div class="row-inline">
-      <div>
-        <label>Ship To GSTIN
-          <input id="shipGstin" type="text" placeholder="GSTIN (optional)" />
-        </label>
-      </div>
-      <div>
-        <label>Ship State Code
-          <input id="shipStateCode" type="text" placeholder="e.g., 08" />
-        </label>
-      </div>
-    </div>
-
     <div class="row-inline" style="margin-top:10px;">
       <div style="flex:1 1 auto;"></div>
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button class="btn btn-soft" type="button" id="btnNewInvoiceNo">New Invoice No.</button>
+      </div>
+    </div>
+
+    <div class="section-title">Tax Configuration</div>
+
+    <div class="row-inline">
+      <div>
+        <label>CGST %
+          <input id="cgstRate" type="number" min="0" step="0.01" value="2.5" readonly style="background:#f0f0f0;" />
+        </label>
+      </div>
+      <div>
+        <label>SGST %
+          <input id="sgstRate" type="number" min="0" step="0.01" value="2.5" readonly style="background:#f0f0f0;" />
+        </label>
+      </div>
+      <div>
+        <label>IGST % <span class="chip">optional</span>
+          <input id="igstRate" type="number" min="0" step="0.01" placeholder="Leave blank for CGST+SGST" />
+        </label>
       </div>
     </div>
 
@@ -558,7 +612,6 @@
     <div class="items-toolbar">
       <button type="button" class="btn btn-primary" id="addItemBtn">+ Add Item</button>
       <span class="chip" id="itemCountChip">1 item</span>
-      <span class="chip">CGST 2.5% + SGST 2.5%</span>
     </div>
 
     <div class="items-list" id="itemsList"></div>
@@ -566,7 +619,7 @@
     <button class="generate-btn" id="generatePdf" type="button">Generate PDF</button>
 
     <div class="hint">
-      Line items auto-calculate: Amount, Discount, Taxable Value, CGST (2.5%), SGST (2.5%), Total. IGST kept blank/0. Reverse Charge: if Y, GST on Reverse Charge equals total GST.
+      Auto-calculates: Taxable Value, GST (CGST 2.5% + SGST 2.5%, or IGST if specified), Total. Reverse Charge: if Y, GST on Reverse Charge equals total GST.
     </div>
   </div>
 
@@ -610,32 +663,32 @@
           <td id="previewCustomerPhone"></td>
         </tr>
         <tr>
-          <td class="label-cell">Trip Date:</td>
-          <td id="previewTripDate"></td>
+          <td class="label-cell">Email:</td>
+          <td id="previewCustomerEmail"></td>
           <td class="label-cell">Customer GSTIN:</td>
           <td id="previewCustomerGstin"></td>
         </tr>
+        <tr>
+          <td class="label-cell">Trip Start Date:</td>
+          <td id="previewTripDate"></td>
+          <td class="label-cell">Trip End Date:</td>
+          <td id="previewTripEndDate"></td>
+        </tr>
       </table>
 
-      <div class="section-header">Bill To / Ship To</div>
+      <div class="section-header">Bill To</div>
       <table class="info-grid">
         <tr>
           <td class="label-cell">Bill To Name:</td>
-          <td id="previewBillName"></td>
-          <td class="label-cell">Ship To Name:</td>
-          <td id="previewShipName"></td>
+          <td colspan="3" id="previewBillName"></td>
         </tr>
         <tr>
           <td class="label-cell">Bill To Address:</td>
-          <td id="previewBillAddress"></td>
-          <td class="label-cell">Ship To Address:</td>
-          <td id="previewShipAddress"></td>
+          <td colspan="3" id="previewBillAddress"></td>
         </tr>
         <tr>
           <td class="label-cell">Bill GSTIN / State:</td>
-          <td id="previewBillGstinState"></td>
-          <td class="label-cell">Ship GSTIN / State:</td>
-          <td id="previewShipGstinState"></td>
+          <td colspan="3" id="previewBillGstinState"></td>
         </tr>
       </table>
 
@@ -711,9 +764,6 @@
 </div>
 
 <script>
-  const CGST_RATE = 2.5;
-  const SGST_RATE = 2.5;
-  const IGST_RATE = null; // keep blank by request
 
   function setText(id, text){
     const el=document.getElementById(id);
@@ -775,7 +825,6 @@
   const itemsList = document.getElementById('itemsList');
   const addItemBtn = document.getElementById('addItemBtn');
   const itemCountChip = document.getElementById('itemCountChip');
-  const copyBillToShipTo = document.getElementById('copyBillToShipTo');
   const btnNewInvoiceNo = document.getElementById('btnNewInvoiceNo');
 
   function updateItemCount(){
@@ -783,18 +832,34 @@
     itemCountChip.textContent = count + (count===1 ? " item" : " items");
   }
 
-  // Line items input fields:
-  // desc, travellers, rate, discount (amount)
   function addItemRow(prefill={}){
     const row=document.createElement('div');
     row.className='item-row';
     row.innerHTML=`
-      <input class="i-desc" type="text" placeholder="Product / Service" value="${escapeHtml(prefill.desc||"Tour / Trip Service")}">
-      <input class="i-trav" type="number" min="0" step="1" placeholder="Travellers" value="${prefill.trav ?? 1}">
-      <input class="i-rate" type="number" min="0" step="0.01" placeholder="Rate" value="${prefill.rate ?? 0}">
-      <input class="i-disc" type="number" min="0" step="0.01" placeholder="Discount" value="${prefill.disc ?? 0}">
-      <input class="i-hsn" type="text" placeholder="HSN (optional)" value="${escapeHtml(prefill.hsn||"")}">
-      <button type="button" class="item-remove" title="Remove">✕</button>
+      <div class="item-row-desc">
+        <div class="item-field-label">Product / Service Description</div>
+        <input class="i-desc" type="text" placeholder="Enter service description..." value="${escapeHtml(prefill.desc||"Tour / Trip Service")}" style="width:100%;">
+      </div>
+      <div class="item-row-fields">
+        <div>
+          <div class="item-field-label">Travellers</div>
+          <input class="i-trav" type="number" min="0" step="1" placeholder="0" value="${prefill.trav ?? 1}">
+        </div>
+        <div>
+          <div class="item-field-label">Rate (optional)</div>
+          <input class="i-rate" type="number" min="0" step="0.01" placeholder="0.00" value="${prefill.rate ?? ""}">
+        </div>
+        <div>
+          <div class="item-field-label">Amount</div>
+          <input class="i-amount" type="number" min="0" step="0.01" placeholder="0.00" value="${prefill.amount ?? 0}">
+        </div>
+        <div>
+          <div class="item-field-label">Discount</div>
+          <input class="i-disc" type="number" min="0" step="0.01" placeholder="0.00" value="${prefill.disc ?? 0}">
+        </div>
+        <div></div>
+        <button type="button" class="item-remove" title="Remove">✕</button>
+      </div>
     `;
     itemsList.appendChild(row);
     updateItemCount();
@@ -807,26 +872,39 @@
       const desc=r.querySelector('.i-desc')?.value?.trim()||"";
       const trav=Number(r.querySelector('.i-trav')?.value||0);
       const rate=Number(r.querySelector('.i-rate')?.value||0);
+      const amount=Number(r.querySelector('.i-amount')?.value||0);
       const disc=Number(r.querySelector('.i-disc')?.value||0);
-      const hsn=r.querySelector('.i-hsn')?.value?.trim()||"";
-      return {desc, trav, rate, disc, hsn};
-    }).filter(x=>x.desc || x.trav || x.rate || x.disc || x.hsn);
+      return {desc, trav, rate, amount, disc};
+    }).filter(x=>x.desc || x.trav || x.rate || x.amount || x.disc);
   }
 
   function calcLine(it){
-    const amount = (it.trav||0) * (it.rate||0);
-    const discount = Math.min(Math.max(it.disc||0, 0), amount); // clamp
+    const amount = it.amount || 0;
+    const discount = Math.min(Math.max(it.disc||0, 0), amount);
     const taxable = amount - discount;
 
-    const cgstRate = CGST_RATE;
-    const sgstRate = SGST_RATE;
+    const igstRateVal = Number(val('igstRate') || 0);
 
-    const cgstAmt = taxable * (cgstRate/100);
-    const sgstAmt = taxable * (sgstRate/100);
+    let cgstRate, sgstRate, igstRate;
+    let cgstAmt, sgstAmt, igstAmt;
 
-    // IGST requested empty/0
-    const igstRate = "";
-    const igstAmt = 0;
+    if (igstRateVal > 0) {
+      // Use IGST
+      cgstRate = 0;
+      sgstRate = 0;
+      igstRate = igstRateVal;
+      cgstAmt = 0;
+      sgstAmt = 0;
+      igstAmt = taxable * (igstRate/100);
+    } else {
+      // Use CGST + SGST
+      cgstRate = 2.5;
+      sgstRate = 2.5;
+      igstRate = 0;
+      cgstAmt = taxable * (cgstRate/100);
+      sgstAmt = taxable * (sgstRate/100);
+      igstAmt = 0;
+    }
 
     const totalTax = cgstAmt + sgstAmt + igstAmt;
     const total = taxable + totalTax;
@@ -834,16 +912,7 @@
     return { amount, discount, taxable, cgstRate, cgstAmt, sgstRate, sgstAmt, igstRate, igstAmt, total };
   }
 
-  function syncShipToIfChecked(){
-    if(!copyBillToShipTo.checked) return;
-    document.getElementById('shipName').value = val('billName');
-    document.getElementById('shipAddress').value = val('billAddress');
-    document.getElementById('shipGstin').value = val('billGstin');
-    document.getElementById('shipStateCode').value = val('billStateCode');
-  }
-
   function updatePreviewFields(){
-    syncShipToIfChecked();
 
     setText('previewInvoiceNo', val('invoiceNo'));
     setText('previewInvoiceDate', val('invoiceDate'));
@@ -852,26 +921,21 @@
 
     setText('previewCustomerName', val('customerName'));
     setText('previewCustomerPhone', val('customerPhone'));
+    setText('previewCustomerEmail', val('customerEmail'));
     setText('previewTripDate', val('tripDate'));
+    setText('previewTripEndDate', val('tripEndDate'));
     setText('previewCustomerGstin', val('customerGstin'));
 
     setText('previewBillName', val('billName'));
     setText('previewBillAddress', val('billAddress'));
-    setText('previewShipName', val('shipName'));
-    setText('previewShipAddress', val('shipAddress'));
 
     const billGstinState = [val('billGstin'), val('billStateCode')].filter(Boolean).join(" | ");
-    const shipGstinState = [val('shipGstin'), val('shipStateCode')].filter(Boolean).join(" | ");
     setText('previewBillGstinState', billGstinState);
-    setText('previewShipGstinState', shipGstinState);
 
-    // Items table
     const items = getItems();
     const bodyEl = document.getElementById('previewItemsBody');
 
-    let totals = {
-      taxable:0, cgst:0, sgst:0, igst:0, taxTotal:0, grand:0
-    };
+    let totals = { taxable:0, cgst:0, sgst:0, igst:0, taxTotal:0, grand:0 };
 
     if(items.length === 0){
       bodyEl.innerHTML = `
@@ -893,17 +957,17 @@
         return `
           <tr>
             <td class="center">${idx+1}</td>
-            <td>${escapeHtml(it.desc)}${it.hsn ? `<div style="font-size:10px;color:#444;margin-top:2px;">HSN: ${escapeHtml(it.hsn)}</div>` : ""}</td>
+            <td>${escapeHtml(it.desc)}</td>
             <td class="center">${(it.trav||0)}</td>
             <td class="num">${money(it.rate||0)}</td>
             <td class="num">${money(line.amount)}</td>
             <td class="num">${money(line.discount)}</td>
             <td class="num">${money(line.taxable)}</td>
-            <td class="center">${line.cgstRate.toFixed(2)}</td>
+            <td class="center">${line.cgstRate > 0 ? line.cgstRate.toFixed(2) : ''}</td>
             <td class="num">${money(line.cgstAmt)}</td>
-            <td class="center">${line.sgstRate.toFixed(2)}</td>
+            <td class="center">${line.sgstRate > 0 ? line.sgstRate.toFixed(2) : ''}</td>
             <td class="num">${money(line.sgstAmt)}</td>
-            <td class="center"></td>
+            <td class="center">${line.igstRate > 0 ? line.igstRate.toFixed(2) : ''}</td>
             <td class="num">${money(line.igstAmt)}</td>
             <td class="num">${money(line.total)}</td>
           </tr>
@@ -911,7 +975,6 @@
       }).join('');
     }
 
-    // Totals display
     setText('tTaxable', money(totals.taxable));
     setText('tCgst', money(totals.cgst));
     setText('tSgst', money(totals.sgst));
@@ -937,8 +1000,9 @@
     document.getElementById('invoiceNo').value = generateInvoiceNo();
     setTodayDate('invoiceDate');
     setTodayDate('tripDate');
+    setTodayDate('tripEndDate');
 
-    addItemRow({desc:"Tour / Trip Service", trav:1, rate:0, disc:0, hsn:""});
+    addItemRow({desc:"Tour / Trip Service", trav:1, rate:0, disc:0});
 
     document.addEventListener('input', e=>{
       if(e.target.closest('.form-section')){
@@ -947,26 +1011,25 @@
       }
     });
 
-    copyBillToShipTo.addEventListener('change', updatePreviewFields);
-
     btnNewInvoiceNo.addEventListener('click', ()=>{
       document.getElementById('invoiceNo').value = generateInvoiceNo();
       updatePreviewFields();
     });
 
-    addItemBtn.addEventListener('click', ()=> addItemRow({desc:"Tour / Trip Service", trav:1, rate:0, disc:0, hsn:""}));
+    addItemBtn.addEventListener('click', ()=> addItemRow({desc:"Tour / Trip Service", trav:1, rate:0, disc:0}));
 
     itemsList.addEventListener('click', e=>{
       if(e.target.classList.contains('item-remove')){
         e.target.closest('.item-row')?.remove();
         if(itemsList.querySelectorAll('.item-row').length === 0){
-          addItemRow({desc:"Tour / Trip Service", trav:1, rate:0, disc:0, hsn:""});
+          addItemRow({desc:"Tour / Trip Service", trav:1, rate:0, disc:0});
         }
         updateItemCount();
         updatePreviewFields();
       }
     });
 
+    // LANDSCAPE PDF so wide GST table fits
     document.getElementById('generatePdf').addEventListener('click', async ()=>{
       updatePreviewFields();
 
@@ -979,14 +1042,28 @@
 
       const imgData = canvas.toDataURL('image/png');
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF('p','mm','a4');
+
+      const pdf = new jsPDF('l','mm','a4'); // landscape
 
       const pageWidth = pdf.internal.pageSize.getWidth();
-      const margin = 10;
-      const imgWidthMM = pageWidth - margin*2;
-      const imgHeightMM = (canvas.height * imgWidthMM) / canvas.width;
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 8;
 
-      pdf.addImage(imgData, 'PNG', margin, margin, imgWidthMM, imgHeightMM);
+      const maxW = pageWidth - margin*2;
+      const maxH = pageHeight - margin*2;
+
+      let drawW = maxW;
+      let drawH = (canvas.height * drawW) / canvas.width;
+
+      if(drawH > maxH){
+        drawH = maxH;
+        drawW = (canvas.width * drawH) / canvas.height;
+      }
+
+      const x = (pageWidth - drawW) / 2;
+      const y = margin;
+
+      pdf.addImage(imgData, 'PNG', x, y, drawW, drawH);
 
       const fileName = (val('invoiceNo') || 'TourTok_Invoice') + '.pdf';
       pdf.save(fileName);
