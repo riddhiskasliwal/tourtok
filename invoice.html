@@ -721,7 +721,6 @@
             <tr>
               <th class="center" style="width:30px;">#</th>
               <th style="min-width:160px;">Product / Service Description</th>
-              <th class="center" style="width:95px;" id="previewCodeHeader">SAC / HSN</th>
               <th class="center" style="width:70px;">Travellers</th>
               <th class="num" style="width:80px;">Rate</th>
               <th class="num" style="width:90px;">Amount</th>
@@ -739,7 +738,7 @@
           <tbody id="previewItemsBody">
             <tr>
               <td style="height:18px;"></td>
-              <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
             </tr>
           </tbody>
         </table>
@@ -942,7 +941,6 @@
     setText('previewPlaceOfSupply', val('placeOfSupply'));
     setText('previewCodeLabel', val('invoiceCodeType') || 'SAC');
     setText('previewCodeValue', val('invoiceCode'));
-    setText('previewCodeHeader', (val('invoiceCodeType') || 'SAC') + ' Code');
 
     setText('previewCustomerName', val('customerName'));
     setText('previewCustomerPhone', val('customerPhone'));
@@ -966,7 +964,7 @@
       bodyEl.innerHTML = `
         <tr>
           <td style="height:18px;"></td>
-          <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         </tr>
       `;
     } else {
@@ -983,7 +981,6 @@
           <tr>
             <td class="center">${idx+1}</td>
             <td>${escapeHtml(it.desc)}</td>
-            <td class="center">${escapeHtml(val('invoiceCode') || '—')}</td>
             <td class="center">${(it.trav||0)}</td>
             <td class="num">${money(it.rate||0)}</td>
             <td class="num">${money(line.amount)}</td>
