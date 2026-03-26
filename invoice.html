@@ -203,13 +203,22 @@
     .item-row-desc{
       margin-bottom:8px;
     }
+    .item-row select{
+      height:38px;
+      padding:8px;
+      font-size:13px;
+      border:1px solid rgba(31,35,48,0.3);
+      border-radius:var(--radius-sm);
+      background:#fff;
+    }
     .item-row-fields{
       display:grid;
-      grid-template-columns: 65px 80px 90px 80px 1fr 36px;
+      grid-template-columns: 65px 80px 90px 80px 36px;
       gap:8px;
       align-items:end;
     }
-    .item-row input{
+    .item-row input,
+    .item-row select{
       height:38px;
       padding:8px;
       font-size:13px;
@@ -251,7 +260,7 @@
     }
     .items-form-headers-fields{
       display:grid;
-      grid-template-columns: 65px 80px 90px 80px 1fr 36px;
+      grid-template-columns: 65px 80px 90px 80px 36px;
       gap:8px;
       margin-top:4px;
     }
@@ -480,8 +489,8 @@
         width:1100px;
         min-width:1100px;
       }
-      .item-row-fields{grid-template-columns: 65px 80px 90px 80px 1fr 36px;}
-      .items-form-headers-fields{grid-template-columns: 65px 80px 90px 80px 1fr 36px;}
+      .item-row-fields{grid-template-columns: 65px 80px 90px 80px 36px;}
+      .items-form-headers-fields{grid-template-columns: 65px 80px 90px 80px 36px;}
     }
   </style>
 </head>
@@ -495,12 +504,15 @@
 
     <div class="row-inline">
       <div>
-        <label>Invoice No. <span class="chip">auto</span>
-          <input id="invoiceNo" type="text" readonly />
+        <label>Invoice No. <span class="chip">editable</span>
+          <input id="invoiceNo" type="text" placeholder="Enter invoice number" />
         </label>
+        <div style="margin-top:8px;">
+          <button class="btn btn-soft" type="button" id="btnNewInvoiceNo">Generate Invoice No.</button>
+        </div>
       </div>
       <div>
-        <label>Invoice Date
+        <label>Invoice Date <span class="chip">editable</span>
           <input id="invoiceDate" type="date" />
         </label>
       </div>
@@ -518,6 +530,22 @@
       <div>
         <label>Place of Supply / State
           <input id="placeOfSupply" type="text" placeholder="e.g., RAJASTHAN" value="RAJASTHAN" />
+        </label>
+      </div>
+    </div>
+
+    <div class="row-inline">
+      <div>
+        <label>Code Type
+          <select id="invoiceCodeType">
+            <option value="SAC" selected>SAC</option>
+            <option value="HSN">HSN</option>
+          </select>
+        </label>
+      </div>
+      <div>
+        <label>Code
+          <input id="invoiceCode" type="text" placeholder="Enter code" />
         </label>
       </div>
     </div>
@@ -580,13 +608,6 @@
       </div>
     </div>
 
-    <div class="row-inline" style="margin-top:10px;">
-      <div style="flex:1 1 auto;"></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button class="btn btn-soft" type="button" id="btnNewInvoiceNo">New Invoice No.</button>
-      </div>
-    </div>
-
     <div class="section-title">Tax Configuration</div>
 
     <div class="row-inline">
@@ -619,7 +640,7 @@
     <button class="generate-btn" id="generatePdf" type="button">Generate PDF</button>
 
     <div class="hint">
-      Auto-calculates: Taxable Value, GST (CGST 2.5% + SGST 2.5%, or IGST if specified), Total. Reverse Charge: if Y, GST on Reverse Charge equals total GST.
+      Auto-calculates: Taxable Value, GST (CGST 2.5% + SGST 2.5%, or IGST if specified), and Total. Invoice number/date remain editable. Choose SAC or HSN once above customer details.
     </div>
   </div>
 
@@ -650,6 +671,7 @@
           <div><b>Invoice No.</b>: <strong id="previewInvoiceNo"></strong></div>
           <div><b>Invoice Date</b>: <span id="previewInvoiceDate"></span></div>
           <div><b>Reverse Charge</b>: <span id="previewReverseCharge"></span></div>
+          <div><b><span id="previewCodeLabel">SAC</span> Code</b>: <span id="previewCodeValue"></span></div>
           <div><b>Place of Supply</b>: <span id="previewPlaceOfSupply"></span></div>
         </div>
       </div>
@@ -699,6 +721,7 @@
             <tr>
               <th class="center" style="width:30px;">#</th>
               <th style="min-width:160px;">Product / Service Description</th>
+              <th class="center" style="width:95px;" id="previewCodeHeader">SAC / HSN</th>
               <th class="center" style="width:70px;">Travellers</th>
               <th class="num" style="width:80px;">Rate</th>
               <th class="num" style="width:90px;">Amount</th>
@@ -716,7 +739,7 @@
           <tbody id="previewItemsBody">
             <tr>
               <td style="height:18px;"></td>
-              <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
             </tr>
           </tbody>
         </table>
@@ -857,7 +880,6 @@
           <div class="item-field-label">Discount</div>
           <input class="i-disc" type="number" min="0" step="0.01" placeholder="0.00" value="${prefill.disc ?? 0}">
         </div>
-        <div></div>
         <button type="button" class="item-remove" title="Remove">✕</button>
       </div>
     `;
@@ -918,6 +940,9 @@
     setText('previewInvoiceDate', val('invoiceDate'));
     setText('previewReverseCharge', val('reverseCharge'));
     setText('previewPlaceOfSupply', val('placeOfSupply'));
+    setText('previewCodeLabel', val('invoiceCodeType') || 'SAC');
+    setText('previewCodeValue', val('invoiceCode'));
+    setText('previewCodeHeader', (val('invoiceCodeType') || 'SAC') + ' Code');
 
     setText('previewCustomerName', val('customerName'));
     setText('previewCustomerPhone', val('customerPhone'));
@@ -941,7 +966,7 @@
       bodyEl.innerHTML = `
         <tr>
           <td style="height:18px;"></td>
-          <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         </tr>
       `;
     } else {
@@ -958,6 +983,7 @@
           <tr>
             <td class="center">${idx+1}</td>
             <td>${escapeHtml(it.desc)}</td>
+            <td class="center">${escapeHtml(val('invoiceCode') || '—')}</td>
             <td class="center">${(it.trav||0)}</td>
             <td class="num">${money(it.rate||0)}</td>
             <td class="num">${money(line.amount)}</td>
