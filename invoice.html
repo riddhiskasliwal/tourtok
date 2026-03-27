@@ -63,14 +63,14 @@
 
     /* PREVIEW (wide for GST table) */
     #invoice{
-      width:1100px;
+      width:1100px;              /* wider */
       max-width:100%;
       background:#fff;
       border-radius:var(--radius-lg);
       border:1px solid rgba(31,35,48,0.15);
       box-shadow:0 2px 8px rgba(0,0,0,.04);
       padding:24px 24px 32px;
-      font-size:12px;
+      font-size:12px;            /* slightly smaller */
       line-height:1.35;
       color:var(--navy);
     }
@@ -376,13 +376,13 @@
     table.items-table{
       width:100%;
       border-collapse:collapse;
-      font-size:10px;
+      font-size:10px; /* smaller to fit */
       color:var(--navy);
     }
     .items-table th,
     .items-table td{
       border:1px solid var(--border-line);
-      padding:3px 4px;
+      padding:3px 4px; /* tighter */
       text-align:left;
       background:#fff;
       vertical-align:top;
@@ -442,7 +442,7 @@
       background:#fff;
       font-size:12px;
       line-height:1.5;
-      margin-bottom:0;
+      margin-bottom:12px;
       color:var(--navy);
     }
 
@@ -775,8 +775,16 @@
         <div>
           <div><b>Amount in Words:</b></div>
           <div id="previewAmountWords" style="margin-top:4px;"></div>
-          <div style="margin-top:10px;font-size:11px;">
-            <b>Terms:</b> Bookings confirmed after full payment
+          <div class="terms-section" style="margin-top:10px;">
+            <h3>Terms &amp; Conditions</h3>
+            <ol>
+              <li>All Amount in INR Only.</li>
+              <li>CASH: Payment is to be made directly to the office.</li>
+              <li>CHEQUE: Cheques should be drawn in favour of Tour Tok.</li>
+              <li>RECEIPTS: Official receipts duly signed will be considered valid.</li>
+              <li>And all Other as per Agreement</li>
+              <li>Subject to JAIPUR Jurisdiction Only.</li>
+            </ol>
           </div>
         </div>
 
@@ -803,18 +811,6 @@
             <div class="seal-placeholder">Seal &amp; Signature</div>
           </div>
         </div>
-      </div>
-
-      <div class="terms-section">
-        <h3>Terms &amp; Conditions</h3>
-        <ol>
-          <li>All Amount in INR Only.</li>
-          <li>CASH: Payment is to be made directly to the office.</li>
-          <li>CHEQUE: Cheques should be drawn in favour of Tour Tok.</li>
-          <li>RECEIPTS: Official receipts duly signed will be considered valid.</li>
-          <li>And all Other as per Agreement</li>
-          <li>Subject to JAIPUR Jurisdiction Only.</li>
-        </ol>
       </div>
 
       <div class="thankyou-bar">Thanks for business with us!</div>
@@ -948,6 +944,7 @@
     let cgstAmt, sgstAmt, igstAmt;
 
     if (igstRateVal > 0) {
+      // Use IGST
       cgstRate = 0;
       sgstRate = 0;
       igstRate = igstRateVal;
@@ -955,6 +952,7 @@
       sgstAmt = 0;
       igstAmt = taxable * (igstRate/100);
     } else {
+      // Use CGST + SGST
       cgstRate = 2.5;
       sgstRate = 2.5;
       igstRate = 0;
@@ -1101,27 +1099,30 @@
       const imgData = canvas.toDataURL('image/png');
       const { jsPDF } = window.jspdf;
 
-      const pdf = new jsPDF('l','mm','a4');
+      const pdf = new jsPDF('p', 'mm', 'a4');
 
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
+
       const margin = 8;
+      const usableWidth = pageWidth - (margin * 2);
+      const usableHeight = pageHeight - (margin * 2);
 
-      const maxW = pageWidth - margin*2;
-      const maxH = pageHeight - margin*2;
+      const imgWidth = usableWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      let drawW = maxW;
-      let drawH = (canvas.height * drawW) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = margin;
 
-      if(drawH > maxH){
-        drawH = maxH;
-        drawW = (canvas.width * drawH) / canvas.height;
+      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+      heightLeft -= usableHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + margin;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+        heightLeft -= usableHeight;
       }
-
-      const x = (pageWidth - drawW) / 2;
-      const y = margin;
-
-      pdf.addImage(imgData, 'PNG', x, y, drawW, drawH);
 
       const fileName = (val('invoiceNo') || 'TourTok_Invoice') + '.pdf';
       pdf.save(fileName);
