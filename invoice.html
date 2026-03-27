@@ -63,14 +63,14 @@
 
     /* PREVIEW (wide for GST table) */
     #invoice{
-      width:1100px;              /* wider */
+      width:1100px;
       max-width:100%;
       background:#fff;
       border-radius:var(--radius-lg);
       border:1px solid rgba(31,35,48,0.15);
       box-shadow:0 2px 8px rgba(0,0,0,.04);
       padding:24px 24px 32px;
-      font-size:12px;            /* slightly smaller */
+      font-size:12px;
       line-height:1.35;
       color:var(--navy);
     }
@@ -376,13 +376,13 @@
     table.items-table{
       width:100%;
       border-collapse:collapse;
-      font-size:10px; /* smaller to fit */
+      font-size:10px;
       color:var(--navy);
     }
     .items-table th,
     .items-table td{
       border:1px solid var(--border-line);
-      padding:3px 4px; /* tighter */
+      padding:3px 4px;
       text-align:left;
       background:#fff;
       vertical-align:top;
@@ -442,7 +442,7 @@
       background:#fff;
       font-size:12px;
       line-height:1.5;
-      margin-bottom:12px;
+      margin-bottom:0;
       color:var(--navy);
     }
 
@@ -466,6 +466,32 @@
       align-items:center;
       justify-content:center;
       background:#fff;
+    }
+
+    .terms-section{
+      border:1px solid var(--border-line);
+      border-top:none;
+      padding:10px 12px;
+      background:#fff;
+      font-size:11px;
+      line-height:1.45;
+      color:var(--navy);
+    }
+
+    .terms-section h3{
+      margin:0 0 8px 0;
+      font-size:13px;
+      font-weight:800;
+      color:var(--navy);
+    }
+
+    .terms-section ol{
+      margin:0;
+      padding-left:18px;
+    }
+
+    .terms-section li{
+      margin-bottom:4px;
     }
 
     .thankyou-bar{
@@ -779,6 +805,18 @@
         </div>
       </div>
 
+      <div class="terms-section">
+        <h3>Terms &amp; Conditions</h3>
+        <ol>
+          <li>All Amount in INR Only.</li>
+          <li>CASH: Payment is to be made directly to the office.</li>
+          <li>CHEQUE: Cheques should be drawn in favour of Tour Tok.</li>
+          <li>RECEIPTS: Official receipts duly signed will be considered valid.</li>
+          <li>And all Other as per Agreement</li>
+          <li>Subject to JAIPUR Jurisdiction Only.</li>
+        </ol>
+      </div>
+
       <div class="thankyou-bar">Thanks for business with us!</div>
     </div>
   </div>
@@ -910,7 +948,6 @@
     let cgstAmt, sgstAmt, igstAmt;
 
     if (igstRateVal > 0) {
-      // Use IGST
       cgstRate = 0;
       sgstRate = 0;
       igstRate = igstRateVal;
@@ -918,7 +955,6 @@
       sgstAmt = 0;
       igstAmt = taxable * (igstRate/100);
     } else {
-      // Use CGST + SGST
       cgstRate = 2.5;
       sgstRate = 2.5;
       igstRate = 0;
@@ -1052,7 +1088,6 @@
       }
     });
 
-    // LANDSCAPE PDF so wide GST table fits
     document.getElementById('generatePdf').addEventListener('click', async ()=>{
       updatePreviewFields();
 
@@ -1066,7 +1101,7 @@
       const imgData = canvas.toDataURL('image/png');
       const { jsPDF } = window.jspdf;
 
-      const pdf = new jsPDF('l','mm','a4'); // landscape
+      const pdf = new jsPDF('l','mm','a4');
 
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
